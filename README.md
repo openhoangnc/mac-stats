@@ -87,6 +87,18 @@ The project is fully automated via `.github/workflows/release.yml`.
 
 ---
 
+## 🧑‍💻 For Developers: Unique Techniques to Learn
+
+This project employs several uncommon and highly optimized techniques for macOS development that you might find interesting:
+
+1. **Zero-Xcode App Bundling**: This app is built entirely without an Xcode project file. Instead, it uses a custom bash script (`build.sh`) that invokes the `swiftc` compiler directly with aggressive size optimizations (`-Osize`, `-wmo`, `-dead_strip`). It then manually constructs the `.app` bundle structure, proving that you can build native macOS UI apps with just a terminal and text editor.
+2. **Direct Low-Level C APIs**: To achieve near-zero CPU overhead, the app bypasses high-level `Foundation` wrappers. It directly calls Mach kernel APIs (`host_processor_info`, `host_statistics64`) and BSD socket APIs (`getifaddrs`) from Swift using raw memory pointers.
+3. **Zero-Allocation String Parsing**: Inside the network polling loop, instead of allocating a Swift `String` to check if an interface is Ethernet/Wi-Fi (e.g., `name.hasPrefix("en")`), the engine compares raw C-string bytes directly (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`). This completely eliminates memory allocation in the high-frequency polling loop.
+4. **Dynamic SMC Discovery via IOKit**: Instead of hardcoding temperature sensor keys or using undocumented private frameworks, the app uses IOKit to dynamically probe the System Management Controller (SMC) on startup. It checks a vast array of known Apple Silicon and Intel keys, automatically discovering which ones are active on the host machine.
+5. **Active Memory Pressure Relief**: Background apps that run indefinitely often suffer from memory fragmentation. This app actively mitigates this by manually calling low-level memory management functions (like `malloc_zone_pressure_relief`) to aggressively keep the background memory footprint tight.
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.

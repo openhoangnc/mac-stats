@@ -87,6 +87,18 @@ Codebase có sẵn workflow tại `.github/workflows/release.yml`.
 
 ---
 
+## 🧑‍💻 Dành cho Nhà phát triển: Các kỹ thuật độc đáo đáng học hỏi
+
+Dự án này sử dụng một số kỹ thuật hiếm gặp và được tối ưu hóa cao cho việc phát triển macOS mà bạn có thể thấy thú vị:
+
+1. **Đóng gói ứng dụng Zero-Xcode**: Ứng dụng này được xây dựng hoàn toàn không có tệp dự án Xcode. Thay vào đó, nó sử dụng một tệp kịch bản bash tùy chỉnh (`build.sh`) gọi trực tiếp trình biên dịch `swiftc` với các tùy chọn tối ưu hóa kích thước mạnh mẽ (`-Osize`, `-wmo`, `-dead_strip`). Sau đó, nó xây dựng thủ công cấu trúc gói `.app`, chứng minh rằng bạn có thể xây dựng ứng dụng giao diện người dùng macOS gốc chỉ với terminal và trình soạn thảo văn bản.
+2. **Sử dụng API C cấp thấp trực tiếp**: Để đạt được mức tiêu thụ CPU gần bằng không, ứng dụng bỏ qua các wrapper `Foundation` bậc cao. Nó gọi trực tiếp các Mach kernel API (`host_processor_info`, `host_statistics64`) và BSD socket API (`getifaddrs`) từ Swift bằng cách sử dụng con trỏ bộ nhớ thô.
+3. **Phân tích chuỗi không cấp phát bộ nhớ (Zero-Allocation)**: Bên trong vòng lặp thăm dò mạng, thay vì cấp phát một `String` của Swift để kiểm tra xem một interface có phải là Ethernet/Wi-Fi hay không (ví dụ: `name.hasPrefix("en")`), engine so sánh trực tiếp các byte chuỗi C thô (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`). Điều này hoàn toàn loại bỏ việc cấp phát bộ nhớ trong vòng lặp thăm dò tần số cao.
+4. **Khám phá SMC động qua IOKit**: Thay vì mã hóa cứng (hardcode) các khóa cảm biến nhiệt độ hoặc sử dụng các private framework không được ghi chép, ứng dụng sử dụng IOKit để thăm dò động Bộ điều khiển quản lý hệ thống (SMC - System Management Controller) lúc khởi động. Nó kiểm tra một lượng lớn các khóa Apple Silicon và Intel đã biết, tự động phát hiện các khóa nào đang hoạt động trên máy chủ.
+5. **Chủ động giải phóng áp lực bộ nhớ**: Các ứng dụng nền chạy vô thời hạn thường bị phân mảnh bộ nhớ. Ứng dụng này chủ động giảm thiểu điều đó bằng cách gọi thủ công các hàm quản lý bộ nhớ cấp thấp (như `malloc_zone_pressure_relief`) để giữ cho dung lượng bộ nhớ nền luôn nhỏ gọn.
+
+---
+
 ## 📄 Giấy phép
 
 Project này được phân phối dưới giấy phép MIT.

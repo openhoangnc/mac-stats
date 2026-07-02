@@ -87,6 +87,18 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 
 ---
 
+## 🧑‍💻 开发者专区：值得学习的独特技术
+
+本项目采用了一些在 macOS 开发中不常见且高度优化的技术，您可能会觉得有趣：
+
+1. **零 Xcode 应用程序打包 (Zero-Xcode)**：此应用程序的构建完全不需要 Xcode 项目文件。相反，它使用自定义的 bash 脚本 (`build.sh`) 直接调用 `swiftc` 编译器，并进行激进的体积优化 (`-Osize`、`-wmo`、`-dead_strip`)。然后，它手动构建 `.app` 应用程序包结构，这证明了您只需使用终端和文本编辑器即可构建原生的 macOS UI 应用程序。
+2. **直接调用底层 C API**：为了实现接近零的 CPU 开销，该应用程序绕过了高级的 `Foundation` 包装器。它直接在 Swift 中使用原始内存指针调用 Mach 内核 API (`host_processor_info`、`host_statistics64`) 和 BSD 套接字 API (`getifaddrs`)。
+3. **零分配字符串解析 (Zero-Allocation)**：在网络轮询循环中，引擎没有分配 Swift `String` 来检查接口是否为以太网/Wi-Fi（例如 `name.hasPrefix("en")`），而是直接比较原始 C 字符串字节 (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`)。这完全消除了高频轮询循环中的内存分配。
+4. **通过 IOKit 动态发现 SMC**：该应用程序没有硬编码温度传感器键值或使用未记录的私有框架，而是使用 IOKit 在启动时动态探测系统管理控制器 (SMC)。它检查大量已知的 Apple Silicon 和 Intel 键值，自动发现主机上哪些键值处于活动状态。
+5. **主动缓解内存压力**：无限期运行的后台应用程序通常会遭遇内存碎片问题。此应用程序通过手动调用底层内存管理函数（如 `malloc_zone_pressure_relief`）来主动缓解此问题，从而积极保持极小的后台内存占用。
+
+---
+
 ## 📄 许可协议
 
 本项目基于 MIT License 协议开源。
