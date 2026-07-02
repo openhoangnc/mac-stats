@@ -14,23 +14,37 @@ public class BaseStatsView: NSView {
 }
 
 // MARK: - Color Utilities
-private func colorForUsage(_ percent: Double) -> NSColor {
-    let clamped = min(max(percent, 0.0), 100.0) / 100.0
-    let hue: CGFloat = CGFloat((1.0 - clamped) * 120.0 / 360.0)
-    let saturation: CGFloat = CGFloat(0.6 + clamped * 0.4)
-    let brightness: CGFloat = CGFloat(0.85 + clamped * 0.15)
+private func getContrastOptimizedColor(normalized: Double, isDark: Bool) -> NSColor {
+    let clamped = min(max(normalized, 0.0), 1.0)
+    let hueDegrees = 120.0 - clamped * 130.0
+    let hue = (hueDegrees < 0.0 ? hueDegrees + 360.0 : hueDegrees) / 360.0
+    
+    let saturation: CGFloat
+    let brightness: CGFloat
+    
+    if isDark {
+        saturation = CGFloat(0.40 + clamped * 0.05)
+        brightness = CGFloat(0.95 + clamped * 0.05)
+    } else {
+        saturation = CGFloat(0.85 + clamped * 0.05)
+        brightness = CGFloat(0.28 + clamped * 0.05)
+    }
+    
     return NSColor(calibratedHue: hue, saturation: saturation, brightness: brightness, alpha: 1.0)
+}
+
+private func colorForUsage(_ percent: Double, isDark: Bool) -> NSColor {
+    let clamped = min(max(percent, 0.0), 100.0) / 100.0
+    return getContrastOptimizedColor(normalized: clamped, isDark: isDark)
 }
 
 private func colorForNetworkSpeed(_ bytesPerSec: Double, isDark: Bool, defaultColor: NSColor) -> NSColor {
     guard bytesPerSec >= 1024.0 else { return defaultColor }
     let logKb = log10(bytesPerSec / 1024.0)
     let normalized = min(max(logKb / 4.5, 0.0), 1.0)
-    let hue: CGFloat = CGFloat((1.0 - normalized) * 120.0 / 360.0)
-    let saturation: CGFloat = CGFloat(0.6 + normalized * 0.4)
-    let brightness: CGFloat = isDark ? CGFloat(0.85 + normalized * 0.15) : CGFloat(0.75 + normalized * 0.2)
-    return NSColor(calibratedHue: hue, saturation: saturation, brightness: brightness, alpha: 1.0)
+    return getContrastOptimizedColor(normalized: normalized, isDark: isDark)
 }
+
 
 // MARK: - Static constants (allocated once for app lifetime)
 private let rightAlignStyle: NSParagraphStyle = {
@@ -172,7 +186,7 @@ public class UnifiedStatsView: BaseStatsView {
         let cpuKey = String(format: "%.0f", _cpuPercent)
         if cachedCpuLine == nil || cpuKey != lastCpuKey {
             lastCpuKey = cpuKey
-            let cpuColor = colorForUsage(_cpuPercent)
+            let cpuColor = colorForUsage(_cpuPercent, isDark: isDark)
             cachedCpuLine = buildLine(val: cpuKey, unit: "%", color: cpuColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
@@ -182,7 +196,7 @@ public class UnifiedStatsView: BaseStatsView {
         let memKey = String(format: "%.1f", _memGB)
         if cachedMemLine == nil || memKey != lastMemKey {
             lastMemKey = memKey
-            let memColor = colorForUsage(_memPercent)
+            let memColor = colorForUsage(_memPercent, isDark: isDark)
             cachedMemLine = buildLine(val: memKey, unit: "G", color: memColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
