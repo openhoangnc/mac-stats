@@ -177,6 +177,35 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         sender.state = enable ? .on : .off
     }
     
+    public static func cleanupLoginItem() {
+        if #available(macOS 13.0, *) {
+            do {
+                if SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
+                    print("--> Unregistered SMAppService mainApp login item.")
+                }
+            } catch {
+                print("--> Failed to unregister SMAppService mainApp: \(error)")
+            }
+        }
+        
+        let plistPath = NSString(string: "~/Library/LaunchAgents/com.openhoangnc.macstats.plist").expandingTildeInPath
+        let uid = getuid()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = ["bootout", "gui/\(uid)", plistPath]
+        try? process.run()
+        process.waitUntilExit()
+        
+        if FileManager.default.fileExists(atPath: plistPath) {
+            try? FileManager.default.removeItem(atPath: plistPath)
+            print("--> Removed LaunchAgent plist: \(plistPath)")
+        }
+        
+        UserDefaults.standard.removeObject(forKey: "LaunchAtLogin")
+        UserDefaults.standard.synchronize()
+    }
+    
     private func setLaunchAtLogin(enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: "LaunchAtLogin")
         
@@ -227,6 +256,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 print("Failed to write LaunchAgent plist: \(error)")
             }
         } else {
+            let uid = getuid()
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            process.arguments = ["bootout", "gui/\(uid)", plistPath]
+            try? process.run()
+            process.waitUntilExit()
+            
             if FileManager.default.fileExists(atPath: plistPath) {
                 try? FileManager.default.removeItem(atPath: plistPath)
             }
