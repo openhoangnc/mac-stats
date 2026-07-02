@@ -126,6 +126,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         
         // --- Settings Section ---
+        let autoStartItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
+        autoStartItem.target = self
+        autoStartItem.state = isLaunchAtLoginEnabled ? .on : .off
+        menu.addItem(autoStartItem)
+        
         let intervalSubmenu = NSMenu()
         let intervals: [(String, TimeInterval)] = [("1 second", 1.0), ("2 seconds", 2.0), ("5 seconds", 5.0)]
         for (label, sec) in intervals {
@@ -150,6 +155,82 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
+    }
+    
+    private var isLaunchAtLoginEnabled: Bool {
+        if #available(macOS 13.0, *) {
+            let status = SMAppService.mainApp.status
+            if status == .enabled { return true }
+        }
+        
+        let plistPath = NSString(string: "~/Library/LaunchAgents/com.openhoangnc.macstats.plist").expandingTildeInPath
+        if FileManager.default.fileExists(atPath: plistPath) {
+            return true
+        }
+        
+        return UserDefaults.standard.bool(forKey: "LaunchAtLogin")
+    }
+    
+    @objc private func toggleLaunchAtLogin(_ sender: NSMenuItem) {
+        let enable = !isLaunchAtLoginEnabled
+        setLaunchAtLogin(enabled: enable)
+        sender.state = enable ? .on : .off
+    }
+    
+    private func setLaunchAtLogin(enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: "LaunchAtLogin")
+        
+        if #available(macOS 13.0, *) {
+            do {
+                if enabled {
+                    if SMAppService.mainApp.status != .enabled {
+                        try SMAppService.mainApp.register()
+                    }
+                } else {
+                    if SMAppService.mainApp.status == .enabled {
+                        try SMAppService.mainApp.unregister()
+                    }
+                }
+            } catch {
+                print("SMAppService toggle failed, using LaunchAgent fallback: \(error)")
+            }
+        }
+        
+        let plistPath = NSString(string: "~/Library/LaunchAgents/com.openhoangnc.macstats.plist").expandingTildeInPath
+        if enabled {
+            let execPath = Bundle.main.bundlePath.hasSuffix(".app")
+                ? "\(Bundle.main.bundlePath)/Contents/MacOS/MacStats"
+                : "/Applications/MacStats.app/Contents/MacOS/MacStats"
+            
+            let plistContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>Label</key>
+                <string>com.openhoangnc.macstats</string>
+                <key>ProgramArguments</key>
+                <array>
+                    <string>\(execPath)</string>
+                </array>
+                <key>RunAtLoad</key>
+                <true/>
+            </dict>
+            </plist>
+            """
+            
+            do {
+                let launchAgentsDir = NSString(string: "~/Library/LaunchAgents").expandingTildeInPath
+                try FileManager.default.createDirectory(atPath: launchAgentsDir, withIntermediateDirectories: true)
+                try plistContent.write(toFile: plistPath, atomically: true, encoding: .utf8)
+            } catch {
+                print("Failed to write LaunchAgent plist: \(error)")
+            }
+        } else {
+            if FileManager.default.fileExists(atPath: plistPath) {
+                try? FileManager.default.removeItem(atPath: plistPath)
+            }
+        }
     }
     
     @objc private func changeInterval(_ sender: NSMenuItem) {
