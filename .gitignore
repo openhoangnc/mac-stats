@@ -1,0 +1,5 @@
+# Build artifacts
+MacStats.app
+AppIcon.iconset
+*.tmp
+.DS_Store
