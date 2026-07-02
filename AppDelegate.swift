@@ -2,11 +2,8 @@ import AppKit
 import ServiceManagement
 
 public class AppDelegate: NSObject, NSApplicationDelegate {
-    private var cpuMemStatusItem: NSStatusItem!
-    private var netStatusItem: NSStatusItem!
-    
-    private var cpuMemView: CPUMemView!
-    private var netView: NetworkSpeedView!
+    private var statusItem: NSStatusItem!
+    private var statsView: UnifiedStatsView!
     
     private let statsEngine = StatsEngine()
     private var timer: Timer?
@@ -20,34 +17,25 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         // Prevent app from appearing in Dock or Command-Tab switcher
         NSApp.setActivationPolicy(.accessory)
         
-        setupStatusItems()
+        setupStatusItem()
         startTimer()
         updateStats()
     }
     
-    private func setupStatusItems() {
+    private func setupStatusItem() {
         let statusBar = NSStatusBar.system
         
-        // --- Block 1: CPU & Memory ---
-        cpuMemStatusItem = statusBar.statusItem(withLength: 44)
-        cpuMemView = CPUMemView(frame: NSRect(x: 0, y: 0, width: 44, height: 22))
-        cpuMemView.onClick = { [weak self] in self?.showMenu(for: self?.cpuMemStatusItem) }
-        cpuMemView.onRightClick = { [weak self] in self?.showMenu(for: self?.cpuMemStatusItem) }
-        if let button = cpuMemStatusItem.button {
-            button.addSubview(cpuMemView)
-            cpuMemView.frame = button.bounds
-            cpuMemView.autoresizingMask = [.width, .height]
-        }
+        // Single unified status item (width 74px)
+        let itemWidth: CGFloat = 74.0
+        statusItem = statusBar.statusItem(withLength: itemWidth)
+        statsView = UnifiedStatsView(frame: NSRect(x: 0, y: 0, width: itemWidth, height: 22))
+        statsView.onClick = { [weak self] in self?.showMenu() }
+        statsView.onRightClick = { [weak self] in self?.showMenu() }
         
-        // --- Block 2: Network Speed ---
-        netStatusItem = statusBar.statusItem(withLength: 56)
-        netView = NetworkSpeedView(frame: NSRect(x: 0, y: 0, width: 56, height: 22))
-        netView.onClick = { [weak self] in self?.showMenu(for: self?.netStatusItem) }
-        netView.onRightClick = { [weak self] in self?.showMenu(for: self?.netStatusItem) }
-        if let button = netStatusItem.button {
-            button.addSubview(netView)
-            netView.frame = button.bounds
-            netView.autoresizingMask = [.width, .height]
+        if let button = statusItem.button {
+            button.addSubview(statsView)
+            statsView.frame = button.bounds
+            statsView.autoresizingMask = [.width, .height]
         }
     }
     
@@ -66,16 +54,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.cpuMemView.cpuPercent = self.currentCpuStats.usagePercent
-            self.cpuMemView.memGB = self.currentMemStats.usedGB
+            self.statsView.cpuPercent = self.currentCpuStats.usagePercent
+            self.statsView.memGB = self.currentMemStats.usedGB
+            self.statsView.memPercent = self.currentMemStats.usedPercent
             
-            self.netView.uploadBytesPerSec = self.currentNetStats.uploadBytesPerSec
-            self.netView.downloadBytesPerSec = self.currentNetStats.downloadBytesPerSec
+            self.statsView.uploadBytesPerSec = self.currentNetStats.uploadBytesPerSec
+            self.statsView.downloadBytesPerSec = self.currentNetStats.downloadBytesPerSec
         }
     }
     
-    private func showMenu(for item: NSStatusItem?) {
-        guard let item = item else { return }
+    private func showMenu() {
         let menu = NSMenu()
         
         // Header
@@ -123,11 +111,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         netHeader.isEnabled = false
         menu.addItem(netHeader)
         
-        let netUp = NSMenuItem(title: String(format: "  Upload Speed: ▲ %@", formatNetSpeed(currentNetStats.uploadBytesPerSec)), action: nil, keyEquivalent: "")
+        let netUp = NSMenuItem(title: String(format: "  Upload Speed: %@ ▲", formatNetSpeed(currentNetStats.uploadBytesPerSec)), action: nil, keyEquivalent: "")
         netUp.isEnabled = false
         menu.addItem(netUp)
         
-        let netDown = NSMenuItem(title: String(format: "  Download Speed: ▼ %@", formatNetSpeed(currentNetStats.downloadBytesPerSec)), action: nil, keyEquivalent: "")
+        let netDown = NSMenuItem(title: String(format: "  Download Speed: %@ ▼", formatNetSpeed(currentNetStats.downloadBytesPerSec)), action: nil, keyEquivalent: "")
         netDown.isEnabled = false
         menu.addItem(netDown)
         
@@ -159,9 +147,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         menu.addItem(quitItem)
         
-        item.menu = menu
-        item.button?.performClick(nil)
-        item.menu = nil
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
     }
     
     @objc private func changeInterval(_ sender: NSMenuItem) {
@@ -176,14 +164,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func formatNetSpeed(_ bytesPerSec: Double) -> String {
-        if bytesPerSec < 1024 {
-            return String(format: "%.0f B/s", bytesPerSec)
-        } else if bytesPerSec < 1024 * 1024 {
-            return String(format: "%.1f KB/s", bytesPerSec / 1024.0)
-        } else if bytesPerSec < 1024 * 1024 * 1024 {
-            return String(format: "%.2f MB/s", bytesPerSec / (1024.0 * 1024.0))
+        if bytesPerSec < 1000 {
+            return String(format: "%.0f B", bytesPerSec)
+        } else if bytesPerSec < 1000 * 1024 {
+            return String(format: "%.1f K", bytesPerSec / 1024.0)
+        } else if bytesPerSec < 1000 * 1048576 {
+            return String(format: "%.1f M", bytesPerSec / 1048576.0)
         } else {
-            return String(format: "%.2f GB/s", bytesPerSec / (1024.0 * 1024.0 * 1024.0))
+            return String(format: "%.1f G", bytesPerSec / 1073741824.0)
         }
     }
 }
