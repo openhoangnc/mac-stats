@@ -100,8 +100,8 @@ public class UnifiedStatsView: BaseStatsView {
         let memColor = colorForUsage(memPercent)
 
         let font = NSFont.monospacedDigitSystemFont(ofSize: 9.0, weight: .bold)
-        let unitFont = NSFont.monospacedSystemFont(ofSize: 8.0, weight: .semibold)
-        let cpuMemUnitFont = NSFont.systemFont(ofSize: 8.0, weight: .semibold)
+        let unitFont = NSFont.monospacedSystemFont(ofSize: 9.0, weight: .bold)
+        let cpuMemUnitFont = NSFont.systemFont(ofSize: 9.0, weight: .bold)
         
         let line1Y: CGFloat = 11.0
         let line2Y: CGFloat = 1.0
