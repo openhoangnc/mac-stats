@@ -7,7 +7,7 @@ public struct CPUStats {
     public var userPercent: Double = 0.0
     public var systemPercent: Double = 0.0
     public var idlePercent: Double = 0.0
-    public var coreCount: Int = ProcessInfo.processInfo.activeProcessorCount
+    public var coreCount: Int = 0
 }
 
 public struct MemoryStats {
@@ -40,14 +40,33 @@ public struct NetworkStats {
 }
 
 public class StatsEngine {
+    // Cached immutable system values (queried once)
+    private let hostPort: mach_port_t = mach_host_self()
+    private let totalPhysicalMemory: UInt64 = ProcessInfo.processInfo.physicalMemory
+    private let cachedPageSize: UInt64
+    
+    // CPU delta tracking
     private var prevCpuInfo: processor_info_array_t?
     private var prevCpuInfoCount: mach_msg_type_number_t = 0
     
+    // Network delta tracking
     private var prevNetBytesSent: UInt64 = 0
     private var prevNetBytesRecv: UInt64 = 0
-    private var prevNetTime: Date?
+    private var prevNetTime: CFAbsoluteTime = 0
+    private var cachedActiveInterface: String = "en0"
 
-    public init() {}
+    public init() {
+        var pageSize: vm_size_t = 4096
+        host_page_size(hostPort, &pageSize)
+        cachedPageSize = UInt64(pageSize)
+    }
+
+    deinit {
+        if let prevCpuInfo = prevCpuInfo {
+            let prevSize = MemoryLayout<integer_t>.size * Int(prevCpuInfoCount)
+            vm_deallocate(mach_task_self_, vm_address_t(bitPattern: prevCpuInfo), vm_size_t(prevSize))
+        }
+    }
 
     // MARK: - CPU Sampling
     public func fetchCPUStats() -> CPUStats {
@@ -56,7 +75,7 @@ public class StatsEngine {
         var cpuInfo: processor_info_array_t?
         var cpuInfoCount: mach_msg_type_number_t = 0
         
-        let result = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &numCPUs, &cpuInfo, &cpuInfoCount)
+        let result = host_processor_info(hostPort, PROCESSOR_CPU_LOAD_INFO, &numCPUs, &cpuInfo, &cpuInfoCount)
         guard result == KERN_SUCCESS, let cpuInfo = cpuInfo else {
             return stats
         }
@@ -105,14 +124,14 @@ public class StatsEngine {
     // MARK: - Memory Sampling
     public func fetchMemoryStats() -> MemoryStats {
         var stats = MemoryStats()
-        stats.totalBytes = ProcessInfo.processInfo.physicalMemory
+        stats.totalBytes = totalPhysicalMemory
         
         var stats64 = vm_statistics64_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.size / MemoryLayout<integer_t>.size)
         
         let kerr = withUnsafeMutablePointer(to: &stats64) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+                host_statistics64(hostPort, HOST_VM_INFO64, $0, &count)
             }
         }
         
@@ -120,10 +139,7 @@ public class StatsEngine {
             return stats
         }
         
-        var pageSize: vm_size_t = 4096
-        host_page_size(mach_host_self(), &pageSize)
-        let page = UInt64(pageSize)
-        
+        let page = cachedPageSize
         let active = UInt64(stats64.active_count) * page
         let wired = UInt64(stats64.wire_count) * page
         let compressed = UInt64(stats64.compressor_page_count) * page
@@ -150,7 +166,7 @@ public class StatsEngine {
         
         var currentBytesSent: UInt64 = 0
         var currentBytesRecv: UInt64 = 0
-        var primaryInterface = "en0"
+        var foundEnInterface = false
         
         var ptr: UnsafeMutablePointer<ifaddrs>? = firstAddr
         while let curr = ptr {
@@ -160,18 +176,23 @@ public class StatsEngine {
             let isLoopback = (flags & IFF_LOOPBACK) != 0
             
             if isUp && isRunning && !isLoopback {
-                let name = String(cString: curr.pointee.ifa_name)
                 if curr.pointee.ifa_addr.pointee.sa_family == UInt8(AF_LINK) {
-                    if let data = curr.pointee.ifa_data {
-                        let ifData = data.assumingMemoryBound(to: if_data.self)
-                        let bytesRecv = UInt64(ifData.pointee.ifi_ibytes)
-                        let bytesSent = UInt64(ifData.pointee.ifi_obytes)
-                        
-                        // Prefer physical interfaces starting with 'en'
-                        if name.hasPrefix("en") {
-                            primaryInterface = name
-                            currentBytesRecv += bytesRecv
-                            currentBytesSent += bytesSent
+                    if let namePtr = curr.pointee.ifa_name {
+                        // Zero-alloc check: compare raw bytes for "en" prefix (0x65='e', 0x6e='n')
+                        if namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e {
+                            if let data = curr.pointee.ifa_data {
+                                let ifData = data.assumingMemoryBound(to: if_data.self)
+                                currentBytesRecv += UInt64(ifData.pointee.ifi_ibytes)
+                                currentBytesSent += UInt64(ifData.pointee.ifi_obytes)
+                                
+                                if !foundEnInterface {
+                                    foundEnInterface = true
+                                    let nameStr = String(cString: namePtr)
+                                    if nameStr != cachedActiveInterface {
+                                        cachedActiveInterface = nameStr
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -181,11 +202,11 @@ public class StatsEngine {
         
         stats.totalSentBytes = currentBytesSent
         stats.totalRecvBytes = currentBytesRecv
-        stats.activeInterface = primaryInterface
+        stats.activeInterface = cachedActiveInterface
         
-        let now = Date()
-        if let prevTime = prevNetTime {
-            let dt = now.timeIntervalSince(prevTime)
+        let now = CFAbsoluteTimeGetCurrent()
+        if prevNetTime > 0 {
+            let dt = now - prevNetTime
             if dt > 0 {
                 let sentDelta = currentBytesSent >= prevNetBytesSent ? currentBytesSent - prevNetBytesSent : 0
                 let recvDelta = currentBytesRecv >= prevNetBytesRecv ? currentBytesRecv - prevNetBytesRecv : 0

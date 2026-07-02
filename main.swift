@@ -7,7 +7,9 @@ if CommandLine.arguments.contains("--cleanup-login-item") ||
     exit(0)
 }
 
+// Use NSApplication.run() directly — lighter than NSApplicationMain which
+// tries to load main NIB from Info.plist (we have none).
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
-_ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+app.run()

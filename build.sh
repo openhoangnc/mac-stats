@@ -2,18 +2,19 @@
 set -e
 
 APP_NAME="MacStats"
-BUILD_DIR="build"
 APP_BUNDLE="${APP_NAME}.app"
 
-echo "=== Building ${APP_NAME} ==="
+echo "=== Building ${APP_NAME} (Optimized) ==="
 
 # 1. Generate icon
 echo "[1/4] Generating AppIcon.icns..."
 python3 generate_icon.py || echo "Warning: Icon generation failed, continuing..."
 
-# 2. Compile Swift executable
+# 2. Compile Swift executable with maximum size & performance optimizations
 echo "[2/4] Compiling Swift source code..."
-swiftc -O \
+swiftc -Osize -wmo \
+    -module-name MacStats \
+    -Xlinker -dead_strip \
     -framework AppKit \
     -framework IOKit \
     -framework Foundation \
@@ -22,6 +23,9 @@ swiftc -O \
     AppDelegate.swift \
     main.swift \
     -o "${APP_NAME}_bin"
+
+# Strip debug symbols and local symbols to minimize binary
+strip -x "${APP_NAME}_bin" || true
 
 # 3. Create .app bundle structure
 echo "[3/4] Packaging ${APP_BUNDLE}..."
