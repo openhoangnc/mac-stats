@@ -1,6 +1,6 @@
 # MacStats 📊
 
-> A lightweight, native macOS Menu Bar status monitor built with Swift. Real-time CPU usage, RAM stats, Network speeds, and CPU temperature at a glance.
+> A lightning-fast, native macOS Menu Bar monitor built with Swift. Keep an eye on your CPU usage, RAM consumption, network speeds, and CPU temperature in real time—right at a glance.
 
 🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
 
@@ -12,8 +12,8 @@
 
 ## ⚡ Quick Start
 
-### 📦 1-Command Download & Install
-Run this single command in your Terminal to download, build/extract, and install **MacStats** directly to `/Applications`:
+### 📦 One-Line Download & Install
+Just copy and paste this command into your Terminal. It will automatically download, extract, and install **MacStats** directly into your `/Applications` folder:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
@@ -21,8 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.
 
 ---
 
-### 🗑️ 1-Command Uninstall All
-To completely stop MacStats, remove launch at startup items, clear user preferences, and delete `/Applications/MacStats.app`:
+### 🗑️ Complete Uninstallation
+Want to remove it completely? This command safely stops the app, removes it from your startup items, clears your user preferences, and deletes the app bundle:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
@@ -30,33 +30,33 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- 🚀 **Ultra Lightweight & Fast**: Native Swift application with extremely low memory and CPU footprint. No Xcode project or heavy dependencies required.
-- 📊 **Three-Column Menu Bar View**:
-  - **Left Column (Network)**: Real-time Upload (top) and Download (bottom) network speeds with auto-scaling unit (`B`, `K`, `M`, `G`) and speed-based color coding.
-  - **Middle Column (CPU/Memory)**: Live CPU usage (`%`) (top) and memory usage in gigabytes (`G`) (bottom) with usage-based color coding.
-  - **Right Column (Temperature)**: CPU average temperature (top) and unit (`°C` or `°F`) (bottom) with dynamic temperature-based color coding.
-- ⚙️ **Settings Context Menu**: Click or right-click the menu bar status item to inspect options:
-  - **Launch at Login**: Toggle automatic startup upon macOS user login (uses `SMAppService` on macOS 13+ with fallback LaunchAgents plist on older systems).
-  - **Update Interval**: Custom update frequency selection (1s, 2s, or 5s).
-  - **Temperature Unit**: Choose Celsius (`°C`) or Fahrenheit (`°F`).
-  - **GitHub Repository**: Direct link to the repository page.
-  - **Quit MacStats**: Close the application.
-- 🧠 **Dynamic SMC Temperature Scanning**: Automatically scans for active Intel and Apple Silicon (M1/M2/M3/M4/M5) temperature sensor keys at startup (checking efficiency cores, performance cores, base CPU and Pro/Max/Ultra/General keys) and calculates the real-time average.
-- ⚡ **Performance & Memory Optimizations**:
-  - Runs as an accessory (`LSUIElement`) app so it has no Dock or Application switcher footprint.
-  - Employs active memory trim (`malloc_zone_pressure_relief`) on startup and periodically (every 30 seconds) to prevent heap fragmentation.
-  - Sets timer tolerance (25% of the interval) to allow macOS to coalesce timer events and save battery power.
-- 🤖 **Automated GitHub Release & Versioning**: Built-in GitHub Actions workflow automatically builds `.app` releases, bumps semantic version numbers, and creates GitHub releases.
+- 🚀 **Ultra-Lightweight & Blazing Fast**: Written entirely in native Swift, guaranteeing a minimal memory and CPU footprint. No bloated Xcode projects or heavy third-party dependencies.
+- 📊 **Triple-Column Menu Bar Display**:
+  - **Left (Network)**: Real-time Upload (top) and Download (bottom) speeds. Units scale automatically (`B`, `K`, `M`, `G`), and colors adapt dynamically to bandwidth usage.
+  - **Center (CPU/Memory)**: Live CPU load (`%`, top) and RAM usage (`G`, bottom). Smart color thresholds (Green → Yellow → Red) instantly warn you under heavy load.
+  - **Right (Temperature)**: Average CPU temperature (top) and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
+- ⚙️ **Quick Settings Menu**: Left or right-click the menu bar icon to access:
+  - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
+  - **Update Interval**: Customize how often data refreshes (1s, 2s, or 5s).
+  - **Temperature Unit**: Switch effortlessly between Celsius and Fahrenheit.
+  - **GitHub Repository**: Direct link to the source code.
+  - **Quit MacStats**: Safely close the app.
+- 🧠 **Dynamic SMC Temperature Scanning**: On startup, it automatically discovers active SMC temperature sensors for both Intel and Apple Silicon (M1/M2/M3/M4/M5) chips—including efficiency cores, performance cores, and general sensors—to calculate a highly accurate real-time average.
+- ⚡ **Deep Performance & Memory Optimizations**:
+  - Runs entirely as a background accessory (`LSUIElement`). It stays out of your Dock and won't clutter your Command-Tab app switcher.
+  - Actively prevents memory fragmentation by calling `malloc_zone_pressure_relief` on startup and every 30 seconds thereafter.
+  - Implements a smart 25% timer tolerance, allowing macOS to coalesce background tasks and drastically save battery life.
+- 🤖 **Automated CI/CD Workflows**: A built-in GitHub Actions pipeline automatically compiles the `.app`, increments semantic version numbers, and publishes new GitHub Releases.
 
 ---
 
-## 🛠️ CLI arguments & Manual Control
-The compiled binary supports the following arguments:
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: unregisters `SMAppService` login items, removes user LaunchAgents plist files, cleans user default properties, and exits immediately.
+## 🛠️ CLI Flags & Manual Build
+The compiled binary natively supports the following command-line flags for silent management:
+- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: Silently unregisters `SMAppService` launch items, removes user LaunchAgent plists, flushes user defaults, and immediately exits.
 
-If you prefer to compile from source manually:
+If you prefer to compile it yourself from source:
 
 1. Clone the repository:
    ```bash
@@ -76,12 +76,12 @@ If you prefer to compile from source manually:
 
 ---
 
-## 🤖 CI/CD & Auto-Versioning
+## 🤖 Continuous Integration & Versioning
 
-MacStats includes a GitHub Actions workflow in `.github/workflows/release.yml`.
+The project is fully automated via `.github/workflows/release.yml`.
 
-- **Automatic Version Bumping**: Increments version numbers (`v1.0.0` → `v1.0.1`) on every release push or manual dispatch.
-- **Automated Releases**: Compiles native macOS binary bundle, packages `MacStats.zip`, creates a GitHub Release, and uploads artifacts.
+- **Automatic Version Bumping**: Pushing to the main branch (or triggering manually) automatically bumps the version number (e.g., `v1.0.0` → `v1.0.1`).
+- **Automated Releases**: The workflow compiles the native macOS app bundle, compresses it into `MacStats.zip`, and automatically attaches it to a new GitHub Release.
 
 ---
 
