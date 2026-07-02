@@ -18,6 +18,7 @@ swiftc -Osize -wmo \
     -framework AppKit \
     -framework IOKit \
     -framework Foundation \
+    SMC.swift \
     StatsEngine.swift \
     StatusBarView.swift \
     AppDelegate.swift \

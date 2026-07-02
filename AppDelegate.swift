@@ -36,7 +36,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         let statusBar = NSStatusBar.system
         
-        let itemWidth: CGFloat = 74.0
+        let itemWidth: CGFloat = 102.0
         statusItem = statusBar.statusItem(withLength: itemWidth)
         statsView = UnifiedStatsView(frame: NSRect(x: 0, y: 0, width: itemWidth, height: 22))
         statsView.onClick = { [weak self] in self?.showMenu() }
@@ -68,6 +68,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         
         statsView.updateValues(
             cpuPercent: currentCpuStats.usagePercent,
+            cpuTemperature: currentCpuStats.temperature,
+            tempUnit: tempUnit,
             memGB: currentMemStats.usedGB,
             memPercent: currentMemStats.usedPercent,
             uploadBytesPerSec: currentNetStats.uploadBytesPerSec,
@@ -104,6 +106,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let refreshItem = NSMenuItem(title: "Update Interval", action: nil, keyEquivalent: "")
         refreshItem.submenu = intervalSubmenu
         menu.addItem(refreshItem)
+        
+        let tempUnitSubmenu = NSMenu()
+        let tempUnits = [("Celsius (°C)", "C"), ("Fahrenheit (°F)", "F")]
+        for (label, key) in tempUnits {
+            let item = NSMenuItem(title: label, action: #selector(changeTempUnit(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = key
+            item.state = (tempUnit == key) ? .on : .off
+            tempUnitSubmenu.addItem(item)
+        }
+        
+        let tempUnitItem = NSMenuItem(title: "Temperature Unit", action: nil, keyEquivalent: "")
+        tempUnitItem.submenu = tempUnitSubmenu
+        menu.addItem(tempUnitItem)
         
         menu.addItem(NSMenuItem.separator())
 
@@ -241,6 +257,22 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             updateInterval = sec
             trimIntervalTicks = max(1, Int(30.0 / sec))
             startTimer()
+        }
+    }
+    
+    private var tempUnit: String {
+        get {
+            return UserDefaults.standard.string(forKey: "tempUnit") ?? "C"
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "tempUnit")
+            updateStats()
+        }
+    }
+    
+    @objc private func changeTempUnit(_ sender: NSMenuItem) {
+        if let unit = sender.representedObject as? String {
+            tempUnit = unit
         }
     }
     

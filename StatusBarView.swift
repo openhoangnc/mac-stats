@@ -38,6 +38,12 @@ private func colorForUsage(_ percent: Double, isDark: Bool) -> NSColor {
     return getContrastOptimizedColor(normalized: clamped, isDark: isDark)
 }
 
+private func colorForTemperature(_ temp: Double, isDark: Bool) -> NSColor {
+    // Range from 35.0 (cool/green) to 85.0 (hot/red)
+    let clamped = min(max(temp - 35.0, 0.0), 50.0) / 50.0
+    return getContrastOptimizedColor(normalized: clamped, isDark: isDark)
+}
+
 private func colorForNetworkSpeed(_ bytesPerSec: Double, isDark: Bool, defaultColor: NSColor) -> NSColor {
     guard bytesPerSec >= 1024.0 else { return defaultColor }
     let logKb = log10(bytesPerSec / 1024.0)
@@ -56,6 +62,7 @@ private let rightAlignStyle: NSParagraphStyle = {
 private let font = NSFont.monospacedDigitSystemFont(ofSize: 9.0, weight: .bold)
 private let unitFont = NSFont.monospacedSystemFont(ofSize: 9.0, weight: .bold)
 private let cpuMemUnitFont = NSFont.systemFont(ofSize: 9.0, weight: .bold)
+private let tempValFont = NSFont.monospacedDigitSystemFont(ofSize: 10.0, weight: .bold)
 
 private let speedTiers: [(threshold: Double, divisor: Double, unit: String)] = [
     (1000.0,             1.0,              "B"),
@@ -68,6 +75,8 @@ private let speedTiers: [(threshold: Double, divisor: Double, unit: String)] = [
 public class UnifiedStatsView: BaseStatsView {
     // Raw input values
     private var _cpuPercent: Double = -1
+    private var _cpuTemperature: Double = -1
+    private var _tempUnit: String = "C"
     private var _memGB: Double = -1
     private var _memPercent: Double = -1
     private var _uploadBPS: Double = -1
@@ -78,12 +87,15 @@ public class UnifiedStatsView: BaseStatsView {
     private var cachedDownLine: NSAttributedString?
     private var cachedCpuLine: NSAttributedString?
     private var cachedMemLine: NSAttributedString?
+    private var cachedTempLine: NSAttributedString?
+    private var cachedTempUnitLine: NSAttributedString?
 
     // Cached formatted display strings (used as cache invalidation keys)
     private var lastUpKey: String = ""
     private var lastDownKey: String = ""
     private var lastCpuKey: String = ""
     private var lastMemKey: String = ""
+    private var lastTempKey: String = ""
 
     // Cached appearance state
     private var cachedIsDark: Bool? = nil
@@ -103,10 +115,12 @@ public class UnifiedStatsView: BaseStatsView {
         self.layerContentsRedrawPolicy = .onSetNeedsDisplay
     }
 
-    public func updateValues(cpuPercent: Double, memGB: Double, memPercent: Double,
+    public func updateValues(cpuPercent: Double, cpuTemperature: Double, tempUnit: String, memGB: Double, memPercent: Double,
                              uploadBytesPerSec: Double, downloadBytesPerSec: Double) {
         var changed = false
         if _cpuPercent != cpuPercent { _cpuPercent = cpuPercent; changed = true }
+        if _cpuTemperature != cpuTemperature { _cpuTemperature = cpuTemperature; changed = true }
+        if _tempUnit != tempUnit { _tempUnit = tempUnit; changed = true }
         if _memGB != memGB { _memGB = memGB; changed = true }
         if _memPercent != memPercent { _memPercent = memPercent; changed = true }
         if _uploadBPS != uploadBytesPerSec { _uploadBPS = uploadBytesPerSec; changed = true }
@@ -147,8 +161,8 @@ public class UnifiedStatsView: BaseStatsView {
         let appearanceChanged = (isDark != cachedIsDark)
         if appearanceChanged {
             cachedIsDark = isDark
-            cachedUpLine = nil; cachedDownLine = nil; cachedCpuLine = nil; cachedMemLine = nil
-            lastUpKey = ""; lastDownKey = ""; lastCpuKey = ""; lastMemKey = ""
+            cachedUpLine = nil; cachedDownLine = nil; cachedCpuLine = nil; cachedMemLine = nil; cachedTempLine = nil; cachedTempUnitLine = nil
+            lastUpKey = ""; lastDownKey = ""; lastCpuKey = ""; lastMemKey = ""; lastTempKey = ""
         }
 
         let textColor = isDark ? NSColor.white : NSColor.black
@@ -157,8 +171,10 @@ public class UnifiedStatsView: BaseStatsView {
         let line1Y: CGFloat = 11.0
         let line2Y: CGFloat = 1.0
         let lineH: CGFloat = 11.0
+        
         let netW: CGFloat = 38.0
-        let cpuMemW = bounds.width - 2.0
+        let cpuMemW: CGFloat = 38.0
+        let tempW: CGFloat = 24.0
 
         // Upload — only rebuild attributed string if formatted display text changed
         let (upVal, upUnit) = formatSpeed(_uploadBPS)
@@ -183,14 +199,14 @@ public class UnifiedStatsView: BaseStatsView {
         cachedDownLine!.draw(in: CGRect(x: 0, y: line2Y, width: netW, height: lineH))
 
         // CPU
-        let cpuKey = String(format: "%.0f", _cpuPercent)
-        if cachedCpuLine == nil || cpuKey != lastCpuKey {
-            lastCpuKey = cpuKey
+        let cpuVal = String(format: "%.0f", _cpuPercent)
+        if cachedCpuLine == nil || cpuVal != lastCpuKey {
+            lastCpuKey = cpuVal
             let cpuColor = colorForUsage(_cpuPercent, isDark: isDark)
-            cachedCpuLine = buildLine(val: cpuKey, unit: "%", color: cpuColor, dimAlpha: dimAlpha,
+            cachedCpuLine = buildLine(val: cpuVal, unit: "%", color: cpuColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
-        cachedCpuLine!.draw(in: CGRect(x: 0, y: line1Y, width: cpuMemW, height: lineH))
+        cachedCpuLine!.draw(in: CGRect(x: netW, y: line1Y, width: cpuMemW, height: lineH))
 
         // RAM
         let memKey = String(format: "%.1f", _memGB)
@@ -200,6 +216,40 @@ public class UnifiedStatsView: BaseStatsView {
             cachedMemLine = buildLine(val: memKey, unit: "G", color: memColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
-        cachedMemLine!.draw(in: CGRect(x: 0, y: line2Y, width: cpuMemW, height: lineH))
+        cachedMemLine!.draw(in: CGRect(x: netW, y: line2Y, width: cpuMemW, height: lineH))
+
+        // Temperature
+        let tempVal: String
+        if _cpuTemperature > 0 {
+            if _tempUnit == "F" {
+                tempVal = String(format: "%.0f", _cpuTemperature * 1.8 + 32.0)
+            } else {
+                tempVal = String(format: "%.0f", _cpuTemperature)
+            }
+        } else {
+            tempVal = "--"
+        }
+        
+        let tempKey = tempVal + _tempUnit
+        if cachedTempLine == nil || tempKey != lastTempKey {
+            lastTempKey = tempKey
+            let tempColor = _cpuTemperature > 0 ? colorForTemperature(_cpuTemperature, isDark: isDark) : textColor
+            
+            // Value line (Top, bigger font)
+            let s1 = NSMutableAttributedString()
+            s1.append(NSAttributedString(string: tempVal, attributes: [
+                .font: tempValFont, .foregroundColor: tempColor, .paragraphStyle: rightAlignStyle
+            ]))
+            cachedTempLine = s1
+            
+            // Unit line (Bottom, standard font, dimmed)
+            let s2 = NSMutableAttributedString()
+            s2.append(NSAttributedString(string: _cpuTemperature > 0 ? "°" + _tempUnit : "", attributes: [
+                .font: cpuMemUnitFont, .foregroundColor: tempColor.withAlphaComponent(dimAlpha), .paragraphStyle: rightAlignStyle
+            ]))
+            cachedTempUnitLine = s2
+        }
+        cachedTempLine!.draw(in: CGRect(x: netW + cpuMemW, y: line1Y, width: tempW, height: lineH))
+        cachedTempUnitLine!.draw(in: CGRect(x: netW + cpuMemW, y: line2Y, width: tempW, height: lineH))
     }
 }

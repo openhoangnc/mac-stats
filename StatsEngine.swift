@@ -8,6 +8,7 @@ public struct CPUStats {
     public var systemPercent: Double = 0.0
     public var idlePercent: Double = 0.0
     public var coreCount: Int = 0
+    public var temperature: Double = 0.0
 }
 
 public struct MemoryStats {
@@ -54,11 +55,60 @@ public class StatsEngine {
     private var prevNetBytesRecv: UInt64 = 0
     private var prevNetTime: CFAbsoluteTime = 0
     private var cachedActiveInterface: String = "en0"
+    
+    // Active temperature keys cached after startup scan
+    private var activeTempKeys: [String] = []
 
     public init() {
         var pageSize: vm_size_t = 4096
         host_page_size(hostPort, &pageSize)
         cachedPageSize = UInt64(pageSize)
+        
+        self.activeTempKeys = scanActiveTempKeys()
+    }
+    
+    private func scanActiveTempKeys() -> [String] {
+        let potentialKeys = [
+            // Base/General M1/M2/M3/M4/M5 CPU keys
+            "Tc0a", "Tc0b", "Tc0x", "Tc0z",
+            "Tc1a", "Tc1b", "Tc1x", "Tc1z",
+            "Tc2a", "Tc2b", "Tc2x", "Tc2z",
+            "Tc3a", "Tc3b", "Tc3x", "Tc3z",
+            "Tc4a", "Tc4b", "Tc4x", "Tc4z",
+            "Tc5a", "Tc5b", "Tc5x", "Tc5z",
+            "Tc6a", "Tc6b", "Tc6x", "Tc6z",
+            "Tc7a", "Tc7b", "Tc7x", "Tc7z",
+            "Tc8a", "Tc8b", "Tc8x", "Tc8z",
+            "Tc9a", "Tc9b", "Tc9x", "Tc9z",
+            "Tcaa", "Tcab", "Tcax", "Tcaz",
+            
+            // M3/M4/M5 Efficiency cores
+            "Te05", "Te0L", "Te0P", "Te0S", "Te09", "Te0H", "Te0a", "Te0b", "Te0x", "Te0z",
+            "Te3a", "Te3b", "Te3x", "Te3z",
+            
+            // M3/M4 Performance cores
+            "Tf04", "Tf09", "Tf0A", "Tf0B", "Tf0D", "Tf0E", "Tf44", "Tf49", "Tf4A", "Tf4B", "Tf4D", "Tf4E",
+            
+            // M1/M2 Pro/Max/Ultra and general Tp keys
+            "Tp01", "Tp05", "Tp09", "Tp0D", "Tp0H", "Tp0L", "Tp0P", "Tp0X", "Tp0b", "Tp0e", "Tp0T", "Tp0V", "Tp0Y",
+            "Tp1h", "Tp1t", "Tp1p", "Tp1l",
+            "Tp2a", "Tp2b", "Tp2x", "Tp2z",
+            "Tp3a", "Tp3b", "Tp3x", "Tp3z",
+            "Tp4a", "Tp4b", "Tp4x", "Tp4z",
+            "Tp5a", "Tp5b", "Tp5x", "Tp5z",
+            "Tp7a", "Tp7b", "Tp7x", "Tp7z",
+            "Tp8a", "Tp8b", "Tp8x", "Tp8z",
+            "Tp9a", "Tp9b", "Tp9x", "Tp9z"
+        ]
+        
+        var active: [String] = []
+        let smc = SMC.shared
+        for key in potentialKeys {
+            if let val = smc.getValue(key), val > 15.0 && val < 110.0 {
+                active.append(key)
+            }
+        }
+        return active
     }
 
     deinit {
@@ -118,6 +168,23 @@ public class StatsEngine {
         
         self.prevCpuInfo = cpuInfo
         self.prevCpuInfoCount = cpuInfoCount
+        
+        // Calculate CPU average temperature
+        if !activeTempKeys.isEmpty {
+            var sum: Double = 0.0
+            var count = 0
+            let smc = SMC.shared
+            for key in activeTempKeys {
+                if let val = smc.getValue(key), val > 15.0 && val < 110.0 {
+                    sum += val
+                    count += 1
+                }
+            }
+            if count > 0 {
+                stats.temperature = sum / Double(count)
+            }
+        }
+        
         return stats
     }
 
