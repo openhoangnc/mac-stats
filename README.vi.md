@@ -1,6 +1,6 @@
 # MacStats 📊
 
-> Một trình theo dõi trạng thái Thanh Menu macOS gọn nhẹ và thuần bản địa được xây dựng bằng Swift. Xem nhanh mức sử dụng CPU thời gian thực, thông số RAM, tốc độ Mạng và nhiệt độ CPU.
+> Ứng dụng theo dõi trạng thái hệ thống gọn nhẹ trên thanh Menu macOS, được viết hoàn toàn bằng Swift. Giúp bạn xem nhanh mức sử dụng CPU, dung lượng RAM, tốc độ mạng và nhiệt độ CPU theo thời gian thực.
 
 🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
 
@@ -12,8 +12,8 @@
 
 ## ⚡ Bắt đầu nhanh
 
-### 📦 Tải xuống & Cài đặt bằng 1 câu lệnh
-Chạy câu lệnh duy nhất này trong Terminal của bạn để tải xuống, giải nén/biên dịch và cài đặt **MacStats** trực tiếp vào thư mục `/Applications`:
+### 📦 Cài đặt chỉ với 1 dòng lệnh
+Copy và chạy dòng lệnh dưới đây trong Terminal để tải, giải nén và cài đặt **MacStats** thẳng vào thư mục `/Applications`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
@@ -21,8 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.
 
 ---
 
-### 🗑️ Gỡ cài đặt hoàn toàn bằng 1 câu lệnh
-Để dừng hoàn toàn MacStats, xóa bỏ các mục tự động khởi động cùng hệ thống, xóa cấu hình người dùng và xóa `/Applications/MacStats.app`:
+### 🗑️ Gỡ cài đặt hoàn toàn
+Để tắt MacStats, xoá cấu hình khởi động cùng hệ thống, xoá thiết lập của người dùng và xoá ứng dụng khỏi `/Applications`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
@@ -30,61 +30,61 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 
 ---
 
-## ✨ Tính năng chính
+## ✨ Các tính năng nổi bật
 
-- 🚀 **Siêu nhẹ & Nhanh**: Ứng dụng Swift thuần bản địa với mức tiêu thụ tài nguyên CPU và bộ nhớ cực kỳ thấp. Không yêu cầu dự án Xcode hay các thư viện phụ thuộc cồng kềnh.
-- 📊 **Hiển thị 3 Cột trên Thanh Menu**:
-  - **Cột bên trái (Mạng)**: Tốc độ Tải lên (dòng trên) và Tải xuống (dòng dưới) thời gian thực với đơn vị tự động điều chỉnh (`B`, `K`, `M`, `G`) và mã màu động theo tốc độ.
-  - **Cột ở giữa (CPU/Bộ nhớ)**: Mức sử dụng CPU hiện tại (`%`) (dòng trên) và dung lượng RAM đã dùng tính bằng gigabytes (`G`) (dòng dưới) kèm mã màu cảnh báo theo mức độ sử dụng.
-  - **Cột bên phải (Nhiệt độ)**: Nhiệt độ trung bình của CPU (dòng trên) và đơn vị (`°C` hoặc `°F`) (dòng dưới) với mã màu động dựa theo nhiệt độ.
-- ⚙️ **Menu Cài đặt Tiện lợi**: Click chuột trái hoặc click chuột phải vào biểu tượng ứng dụng trên thanh menu để mở các tùy chọn:
-  - **Khởi động cùng hệ thống (Launch at Login)**: Bật/tắt tự động khởi chạy khi đăng nhập macOS (sử dụng `SMAppService` trên macOS 13+ và tự động chuyển sang cấu hình LaunchAgents plist trên các phiên bản cũ hơn).
-  - **Tần suất cập nhật (Update Interval)**: Tùy chỉnh khoảng thời gian cập nhật thông số (1 giây, 2 giây, hoặc 5 giây).
-  - **Đơn vị nhiệt độ (Temperature Unit)**: Chọn giữa Celsius (`°C`) hoặc Fahrenheit (`°F`).
-  - **Kho lưu trữ GitHub (GitHub Repository)**: Liên kết trực tiếp tới trang dự án trên GitHub.
-  - **Thoát MacStats (Quit MacStats)**: Đóng hoàn toàn ứng dụng.
-- 🧠 **Quét nhiệt độ SMC động**: Tự động quét các khóa cảm biến nhiệt độ SMC của dòng chip Intel và Apple Silicon (M1/M2/M3/M4/M5) khi khởi động (kiểm tra các lõi hiệu năng, lõi tiết kiệm điện, CPU tổng và các khóa Pro/Max/Ultra/General) để tính toán nhiệt độ trung bình thời gian thực.
-- ⚡ **Tối ưu hóa Hiệu năng & Bộ nhớ**:
-  - Chạy như một ứng dụng phụ trợ (`LSUIElement`), hoàn toàn ẩn trên Dock và trình chuyển đổi ứng dụng Command-Tab.
-  - Áp dụng cơ chế giải phóng bộ nhớ chủ động (`malloc_zone_pressure_relief`) khi khởi động và định kỳ (mỗi 30 giây) để giảm thiểu hiện tượng phân mảnh bộ nhớ.
-  - Thiết lập dung sai sai số thời gian (timer tolerance là 25% chu kỳ) để macOS có thể nhóm các sự kiện hẹn giờ lại với nhau nhằm tiết kiệm pin tối đa.
-- 🤖 **Tự động đóng gói và cập nhật phiên bản trên GitHub**: Tích hợp quy trình công việc GitHub Actions tự động biên dịch, nén ứng dụng thành file `.zip`, tự động nâng mã phiên bản ngữ nghĩa (semantic versioning) và tạo GitHub Release mới khi có cập nhật.
+- 🚀 **Siêu nhẹ & Siêu nhanh**: Ứng dụng native Swift, ngốn cực kỳ ít CPU và RAM. Code gọn gàng, không cần project Xcode hay các thư viện ngoài cồng kềnh.
+- 📊 **Hiển thị 3 cột thông tin trực quan**:
+  - **Cột Trái (Mạng)**: Tốc độ Upload (dòng trên) và Download (dòng dưới). Đơn vị tự động thay đổi (`B`, `K`, `M`, `G`) và màu sắc cảnh báo theo băng thông.
+  - **Cột Giữa (CPU & RAM)**: % CPU (dòng trên) và mức RAM đang dùng tính bằng GB (dòng dưới). Màu sắc tự động đổi (xanh/vàng/đỏ) khi hệ thống tải nặng.
+  - **Cột Phải (Nhiệt độ)**: Nhiệt độ trung bình của CPU (dòng trên) và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
+- ⚙️ **Menu Cài đặt nhanh**: Click chuột trái/phải vào icon trên thanh Menu để mở:
+  - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).
+  - **Update Interval**: Chọn tốc độ làm mới dữ liệu (1 giây, 2 giây hoặc 5 giây).
+  - **Temperature Unit**: Chuyển đổi giữa độ C và độ F.
+  - **GitHub Repository**: Link nhanh về trang GitHub của project.
+  - **Quit MacStats**: Thoát app.
+- 🧠 **Cảm biến nhiệt độ SMC thông minh**: Tự động dò tìm các cảm biến nhiệt SMC tương thích với cả chip Intel lẫn Apple Silicon (M1/M2/M3/M4/M5). App sẽ check nhiệt độ các nhân P-core, E-core... và tính ra nhiệt độ trung bình chuẩn xác nhất theo thời gian thực.
+- ⚡ **Tối ưu cực hạn cho hiệu năng & bộ nhớ**:
+  - Ẩn mình hoàn toàn như một app nền (`LSUIElement`) – không hiện dưới Dock, không cản trở lúc bạn Command-Tab.
+  - Chủ động dọn dẹp bộ nhớ (gọi `malloc_zone_pressure_relief`) lúc mới bật và đều đặn mỗi 30 giây để tránh rác RAM.
+  - Tích hợp độ trễ hẹn giờ (timer tolerance khoảng 25%), giúp macOS gom nhóm các tác vụ ngầm lại với nhau để tối ưu pin.
+- 🤖 **Tích hợp sẵn luồng CI/CD**: Workflow GitHub Actions tự động build app, tăng version tự động và tạo GitHub Release mỗi lần cập nhật code.
 
 ---
 
-## 🛠️ Đối số Dòng lệnh & Điều khiển Thủ công
-Binary sau khi biên dịch hỗ trợ các đối số dòng lệnh sau:
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: Huỷ đăng ký mục khởi động `SMAppService`, xoá tệp plist LaunchAgents của người dùng, làm sạch thuộc tính cấu hình mặc định và thoát ngay lập tức.
+## 🛠️ Build thủ công & Tham số dòng lệnh
+File thực thi (binary) của app hỗ trợ sẵn các cờ sau:
+- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: Dọn dẹp sạch sẽ các đăng ký khởi động ngầm (`SMAppService` và LaunchAgents plist), xoá cấu hình và tự thoát.
 
-Nếu bạn muốn tự biên dịch từ mã nguồn:
+Nếu bạn thích tự tay clone và build code:
 
-1. Nhân bản kho lưu trữ:
+1. Clone repo về máy:
    ```bash
    git clone https://github.com/openhoangnc/mac-stats.git
    cd mac-stats
    ```
 
-2. Chạy tập lệnh build:
+2. Chạy script build:
    ```bash
    ./build.sh
    ```
 
-3. Khởi chạy ứng dụng:
+3. Mở app lên:
    ```bash
    open MacStats.app
    ```
 
 ---
 
-## 🤖 CI/CD & Tự động gắn phiên bản
+## 🤖 Tự động hoá Release (CI/CD)
 
-MacStats tích hợp sẵn GitHub Actions workflow tại đường dẫn `.github/workflows/release.yml`.
+Codebase có sẵn workflow tại `.github/workflows/release.yml`.
 
-- **Tự động tăng phiên bản**: Tự động nâng số phiên bản (`v1.0.0` → `v1.0.1`) mỗi khi đẩy mã nguồn lên nhánh chính (push) hoặc kích hoạt thủ công.
-- **Tự động tạo Release**: Biên dịch gói ứng dụng macOS nguyên bản, đóng gói `MacStats.zip`, khởi tạo một GitHub Release mới và tải lên các bản dựng đã hoàn thiện.
+- **Tự động tăng version**: Mỗi lần code được push lên nhánh chính (hoặc trigger bằng tay), version sẽ tự động nhảy số (`v1.0.0` → `v1.0.1`).
+- **Build & Đóng gói tự động**: Compile ra app macOS, nén thành `MacStats.zip`, đẩy lên GitHub Release kèm theo changelog.
 
 ---
 
-## 📄 Bản quyền
+## 📄 Giấy phép
 
-Dự án này được cấp phép theo các điều khoản của Giấy phép MIT.
+Project này được phân phối dưới giấy phép MIT.

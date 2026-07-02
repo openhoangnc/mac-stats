@@ -1,6 +1,6 @@
 # MacStats 📊
 
-> 一个使用 Swift 构建的轻量级、原生 macOS 菜单栏状态监控器。实时掌握 CPU 使用率、RAM 统计、网络速度以及 CPU 温度。
+> 一款使用 Swift 开发的 macOS 菜单栏状态监控工具。极其轻量、原生体验。CPU 使用率、内存占用、网速和 CPU 温度，扫一眼即可轻松掌握。
 
 🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
 
@@ -13,7 +13,7 @@
 ## ⚡ 快速开始
 
 ### 📦 一键下载与安装
-在终端（Terminal）中运行此单行命令，即可自动下载、构建/解压，并将 **MacStats** 直接安装到 `/Applications` 目录中：
+在终端 (Terminal) 中运行以下命令，即可全自动完成下载、解压并安装 **MacStats** 到 `/Applications` 目录：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
@@ -21,8 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.
 
 ---
 
-### 🗑️ 一键完全卸载
-如需完全停止 MacStats、移除开机启动项、清除用户偏好设置，并删除 `/Applications/MacStats.app`：
+### 🗑️ 一键干净卸载
+想要完全卸载 MacStats，清理开机启动项以及用户偏好设置，并删除应用程序文件，请运行：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
@@ -30,61 +30,61 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 
 ---
 
-## ✨ 功能特性
+## ✨ 核心特性
 
-- 🚀 **极其轻量与快速**：原生 Swift 应用程序，占用极低的内存和 CPU 资源。无需 Xcode 项目，亦无臃肿的外部依赖。
-- 📊 **三列式菜单栏视图**：
-  - **左列（网络）**：实时上传（上行）和下载（下行）网络速度，支持自动缩放单位（`B`、`K`、`M`、`G`），并根据带宽速度动态调整文本颜色。
-  - **中列（CPU/内存）**：实时 CPU 使用率（`%`，上行）和内存占用（`G`，下行），具有基于使用情况的智能颜色警告阈值。
-  - **右列（温度）**：CPU 平均温度（上行）和单位（`°C` 或 `°F`，下行），基于温度值动态调整文字颜色。
-- ⚙️ **设置上下文菜单**：左键或右键点击菜单栏状态图标，即可展开以下选项：
-  - **开机启动（Launch at Login）**：一键切换是否在 macOS 用户登录时自动运行（在 macOS 13+ 上使用 `SMAppService`，旧版本系统则自动回退至 LaunchAgents plist 配置）。
-  - **更新间隔（Update Interval）**：自定义更新频率（1 秒、2 秒或 5 秒）。
-  - **温度单位（Temperature Unit）**：选择摄氏度（`°C`）或华氏度（`°F`）。
-  - **GitHub 仓库**：直接打开项目 GitHub 主页的链接。
-  - **退出 MacStats（Quit MacStats）**：安全退出并关闭应用程序。
-- 🧠 **动态 SMC 温度扫描**：在启动时自动扫描 Intel 与 Apple Silicon（M1/M2/M3/M4/M5）温度传感器（检测效率核心、性能核心、基础 CPU 和 Pro/Max/Ultra/General 的 SMC 键），并计算实时的平均 CPU 温度。
-- ⚡ **性能与内存优化**：
-  - 作为辅助型应用（`LSUIElement`）运行，不在 Dock 栏或 Command-Tab 应用切换器中展示，保持界面整洁。
-  - 采用主动内存回收（在启动和每隔 30 秒时触发 `malloc_zone_pressure_relief`），释放未使用的堆内存以防止内存碎片化。
-  - 设置定时器容差（时间间隔的 25%），允许 macOS 自动合并定时器事件以节省电池电量。
-- 🤖 **自动化 GitHub 发布与版本控制**：内置 GitHub Actions 工作流，可自动构建 `.app` 版本、递增语义化版本号并创建 GitHub Release。
+- 🚀 **极度轻量且飞快**：原生 Swift 开发，内存和 CPU 占用几乎可以忽略不计。没有臃肿的 Xcode 工程，零第三方依赖。
+- 📊 **三列式菜单栏展示**：
+  - **左列 (网络)**：实时显示 上传（上）和 下载（下）网速。单位自动缩放（`B`, `K`, `M`, `G`），并会根据当前网速动态变色。
+  - **中列 (CPU/内存)**：显示 CPU 使用率（上）和 内存占用量 G（下）。当负载升高时颜色会自动从绿变红。
+  - **右列 (温度)**：显示 CPU 平均温度（上）和 温度单位（下）。颜色同样会根据温度高低自动变化。
+- ⚙️ **快捷设置菜单**：左键或右键点击菜单栏图标即可唤出：
+  - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。
+  - **Update Interval (刷新频率)**：支持自定义刷新时间（1秒、2秒 或 5秒）。
+  - **Temperature Unit (温度单位)**：切换摄氏度 (`°C`) 和华氏度 (`°F`)。
+  - **GitHub Repository**：直达本项目源码库。
+  - **Quit MacStats (退出)**：完全退出程序。
+- 🧠 **动态 SMC 温度传感器扫描**：启动时自动扫描适配的 Intel 和 Apple Silicon (M1/M2/M3/M4/M5) 温度传感器（智能遍历能效核、性能核及各类核心温度键值），精准计算出实时平均温度。
+- ⚡ **深度内存与性能优化**：
+  - 作为后台辅助程序 (`LSUIElement`) 运行，不会在 Dock 栏出现，也不会在 Command-Tab 切换时打扰你。
+  - 主动进行内存整理：在应用启动时及运行期间（每 30 秒）调用 `malloc_zone_pressure_relief`，彻底告别内存碎片和泄露。
+  - 设置了合理的定时器容差 (Tolerance)，允许 macOS 将定时任务与其他系统事件合并执行，显著降低电池消耗。
+- 🤖 **全自动的发布流水线 (CI/CD)**：借助 GitHub Actions，每次更新都会自动构建 `.app`、递增语义化版本号，并发布最新的 GitHub Release。
 
 ---
 
-## 🛠️ 命令行参数与手动控制
-编译后的二进制文件支持以下命令行参数：
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`：注销 `SMAppService` 登录项，移除用户 LaunchAgents 目录下的 plist 文件，清除用户偏好设置，并立即退出程序。
+## 🛠️ CLI 参数与手动编译
+内置支持以下命令行参数，方便静默管理：
+- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`：静默注销 `SMAppService`，删除 LaunchAgents plist 文件及用户配置，然后立刻退出。
 
-如果您更倾向于手动从源码编译：
+如果你更喜欢克隆源码自己编译：
 
-1. 克隆仓库：
+1. 克隆代码库：
    ```bash
    git clone https://github.com/openhoangnc/mac-stats.git
    cd mac-stats
    ```
 
-2. 运行构建脚本：
+2. 执行构建脚本：
    ```bash
    ./build.sh
    ```
 
-3. 运行应用程序：
+3. 运行应用：
    ```bash
    open MacStats.app
    ```
 
 ---
 
-## 🤖 CI/CD 与自动版本控制
+## 🤖 CI/CD 与自动化版本控制
 
-MacStats 包含了位于 `.github/workflows/release.yml` 的 GitHub Actions 工作流。
+本项目通过 `.github/workflows/release.yml` 实现了完善的持续集成与发布：
 
-- **自动版本递增**：在每次向主分支推送代码或手动调度时，自动递增版本号（例如 `v1.0.0` → `v1.0.1`）。
-- **自动化发布**：编译原生 macOS 应用程序包、打包成 `MacStats.zip`、自动创建 GitHub Release 并上传构建产物。
+- **自动打版升级**：当推送代码或手动触发时，版本号会自动递增（例如：`v1.0.0` → `v1.0.1`）。
+- **自动化构建发布**：全自动编译原生 macOS 应用程序包并压缩为 `MacStats.zip`，随后直接发布到 GitHub Releases 供用户下载。
 
 ---
 
-## 📄 开源许可证
+## 📄 许可协议
 
-本项目基于 MIT 许可证开源。
+本项目基于 MIT License 协议开源。
