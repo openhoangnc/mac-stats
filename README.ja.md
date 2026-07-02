@@ -38,6 +38,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **中央列（CPU/メモリ）**: CPU使用率（`%`, 上段）とRAM使用量（`G`, 下段）。負荷が高くなるとテキストの色が自動的に変化（緑→黄→赤）して警告します。
   - **右列（温度）**: CPUの平均温度（上段）と単位（`°C` または `°F`, 下段）。こちらも温度上昇に伴って色が変化します。
 - ⚙️ **便利な設定メニュー**: メニューバーのアイコンをクリック（または右クリック）すると、以下のメニューが表示されます：
+  - **Show Network Speeds（ネットワーク速度を表示）**: ネットワーク速度列の表示/非表示を切り替えます。
+  - **Show CPU Temperature（CPU温度を表示）**: CPU温度列の表示/非表示を切り替えます。
   - **Launch at Login（ログイン時に起動）**: macOSログイン時の自動起動を切り替えます。macOS 13以降ではネイティブの `SMAppService` を利用し、古いOSでは自動的にLaunchAgents plistへフォールバックする安心設計です。
   - **Update Interval（更新間隔）**: データの更新頻度（1秒、2秒、または5秒）を好みに合わせて変更できます。
   - **Temperature Unit（温度単位）**: 摂氏（`°C`）と華氏（`°F`）を切り替えます。

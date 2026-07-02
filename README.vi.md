@@ -38,6 +38,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Cột Giữa (CPU & RAM)**: % CPU (dòng trên) và mức RAM đang dùng tính bằng GB (dòng dưới). Màu sắc tự động đổi (xanh/vàng/đỏ) khi hệ thống tải nặng.
   - **Cột Phải (Nhiệt độ)**: Nhiệt độ trung bình của CPU (dòng trên) và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
 - ⚙️ **Menu Cài đặt nhanh**: Click chuột trái/phải vào icon trên thanh Menu để mở:
+  - **Show Network Speeds**: Bật/tắt hiển thị cột tốc độ mạng.
+  - **Show CPU Temperature**: Bật/tắt hiển thị cột nhiệt độ CPU.
   - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).
   - **Update Interval**: Chọn tốc độ làm mới dữ liệu (1 giây, 2 giây hoặc 5 giây).
   - **Temperature Unit**: Chuyển đổi giữa độ C và độ F.

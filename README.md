@@ -38,6 +38,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Center (CPU/Memory)**: Live CPU load (`%`, top) and RAM usage (`G`, bottom). Smart color thresholds (Green → Yellow → Red) instantly warn you under heavy load.
   - **Right (Temperature)**: Average CPU temperature (top) and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
 - ⚙️ **Quick Settings Menu**: Left or right-click the menu bar icon to access:
+  - **Show Network Speeds**: Toggle the visibility of the network speeds column.
+  - **Show CPU Temperature**: Toggle the visibility of the CPU temperature column.
   - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
   - **Update Interval**: Customize how often data refreshes (1s, 2s, or 5s).
   - **Temperature Unit**: Switch effortlessly between Celsius and Fahrenheit.

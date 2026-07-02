@@ -82,6 +82,16 @@ public class UnifiedStatsView: BaseStatsView {
     private var _uploadBPS: Double = -1
     private var _downloadBPS: Double = -1
 
+    public var showNetwork: Bool = true
+    public var showTemperature: Bool = true
+
+    public static func calculateWidth(showNetwork: Bool, showTemperature: Bool) -> CGFloat {
+        let netW: CGFloat = showNetwork ? 34.0 : 0.0
+        let cpuMemW: CGFloat = showNetwork ? 34.0 : 32.0
+        let tempW: CGFloat = showTemperature ? 21.0 : 0.0
+        return netW + cpuMemW + tempW
+    }
+
     // Cached rendered attributed strings (survive across frames)
     private var cachedUpLine: NSAttributedString?
     private var cachedDownLine: NSAttributedString?
@@ -172,31 +182,37 @@ public class UnifiedStatsView: BaseStatsView {
         let line2Y: CGFloat = 1.0
         let lineH: CGFloat = 11.0
         
-        let netW: CGFloat = 38.0
-        let cpuMemW: CGFloat = 38.0
-        let tempW: CGFloat = 24.0
+        let netW: CGFloat = showNetwork ? 34.0 : 0.0
+        let cpuMemW: CGFloat = showNetwork ? 34.0 : 32.0
+        let tempW: CGFloat = showTemperature ? 21.0 : 0.0
 
-        // Upload — only rebuild attributed string if formatted display text changed
-        let (upVal, upUnit) = formatSpeed(_uploadBPS)
-        let upKey = upVal + upUnit
-        if cachedUpLine == nil || upKey != lastUpKey {
-            lastUpKey = upKey
-            let upColor = colorForNetworkSpeed(_uploadBPS, isDark: isDark, defaultColor: textColor)
-            cachedUpLine = buildLine(val: upVal, unit: upUnit, color: upColor, dimAlpha: dimAlpha,
-                                     valFont: font, uFont: unitFont)
-        }
-        cachedUpLine!.draw(in: CGRect(x: 0, y: line1Y, width: netW, height: lineH))
+        var currentX: CGFloat = 0.0
 
-        // Download
-        let (downVal, downUnit) = formatSpeed(_downloadBPS)
-        let downKey = downVal + downUnit
-        if cachedDownLine == nil || downKey != lastDownKey {
-            lastDownKey = downKey
-            let downColor = colorForNetworkSpeed(_downloadBPS, isDark: isDark, defaultColor: textColor)
-            cachedDownLine = buildLine(val: downVal, unit: downUnit, color: downColor, dimAlpha: dimAlpha,
-                                       valFont: font, uFont: unitFont)
+        if showNetwork {
+            // Upload — only rebuild attributed string if formatted display text changed
+            let (upVal, upUnit) = formatSpeed(_uploadBPS)
+            let upKey = upVal + upUnit
+            if cachedUpLine == nil || upKey != lastUpKey {
+                lastUpKey = upKey
+                let upColor = colorForNetworkSpeed(_uploadBPS, isDark: isDark, defaultColor: textColor)
+                cachedUpLine = buildLine(val: upVal, unit: upUnit, color: upColor, dimAlpha: dimAlpha,
+                                         valFont: font, uFont: unitFont)
+            }
+            cachedUpLine!.draw(in: CGRect(x: currentX, y: line1Y, width: netW, height: lineH))
+
+            // Download
+            let (downVal, downUnit) = formatSpeed(_downloadBPS)
+            let downKey = downVal + downUnit
+            if cachedDownLine == nil || downKey != lastDownKey {
+                lastDownKey = downKey
+                let downColor = colorForNetworkSpeed(_downloadBPS, isDark: isDark, defaultColor: textColor)
+                cachedDownLine = buildLine(val: downVal, unit: downUnit, color: downColor, dimAlpha: dimAlpha,
+                                           valFont: font, uFont: unitFont)
+            }
+            cachedDownLine!.draw(in: CGRect(x: currentX, y: line2Y, width: netW, height: lineH))
+            
+            currentX += netW
         }
-        cachedDownLine!.draw(in: CGRect(x: 0, y: line2Y, width: netW, height: lineH))
 
         // CPU
         let cpuVal = String(format: "%.0f", _cpuPercent)
@@ -206,7 +222,7 @@ public class UnifiedStatsView: BaseStatsView {
             cachedCpuLine = buildLine(val: cpuVal, unit: "%", color: cpuColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
-        cachedCpuLine!.draw(in: CGRect(x: netW, y: line1Y, width: cpuMemW, height: lineH))
+        cachedCpuLine!.draw(in: CGRect(x: currentX, y: line1Y, width: cpuMemW, height: lineH))
 
         // RAM
         let memKey = String(format: "%.1f", _memGB)
@@ -216,40 +232,44 @@ public class UnifiedStatsView: BaseStatsView {
             cachedMemLine = buildLine(val: memKey, unit: "G", color: memColor, dimAlpha: dimAlpha,
                                        valFont: font, uFont: cpuMemUnitFont)
         }
-        cachedMemLine!.draw(in: CGRect(x: netW, y: line2Y, width: cpuMemW, height: lineH))
-
-        // Temperature
-        let tempVal: String
-        if _cpuTemperature > 0 {
-            if _tempUnit == "F" {
-                tempVal = String(format: "%.0f", _cpuTemperature * 1.8 + 32.0)
-            } else {
-                tempVal = String(format: "%.0f", _cpuTemperature)
-            }
-        } else {
-            tempVal = "--"
-        }
+        cachedMemLine!.draw(in: CGRect(x: currentX, y: line2Y, width: cpuMemW, height: lineH))
         
-        let tempKey = tempVal + _tempUnit
-        if cachedTempLine == nil || tempKey != lastTempKey {
-            lastTempKey = tempKey
-            let tempColor = _cpuTemperature > 0 ? colorForTemperature(_cpuTemperature, isDark: isDark) : textColor
+        currentX += cpuMemW
+
+        if showTemperature {
+            // Temperature
+            let tempVal: String
+            if _cpuTemperature > 0 {
+                if _tempUnit == "F" {
+                    tempVal = String(format: "%.0f", _cpuTemperature * 1.8 + 32.0)
+                } else {
+                    tempVal = String(format: "%.0f", _cpuTemperature)
+                }
+            } else {
+                tempVal = "--"
+            }
             
-            // Value line (Top, bigger font)
-            let s1 = NSMutableAttributedString()
-            s1.append(NSAttributedString(string: tempVal, attributes: [
-                .font: tempValFont, .foregroundColor: tempColor, .paragraphStyle: rightAlignStyle
-            ]))
-            cachedTempLine = s1
-            
-            // Unit line (Bottom, standard font, dimmed)
-            let s2 = NSMutableAttributedString()
-            s2.append(NSAttributedString(string: _cpuTemperature > 0 ? "°" + _tempUnit : "", attributes: [
-                .font: cpuMemUnitFont, .foregroundColor: tempColor.withAlphaComponent(dimAlpha), .paragraphStyle: rightAlignStyle
-            ]))
-            cachedTempUnitLine = s2
+            let tempKey = tempVal + _tempUnit
+            if cachedTempLine == nil || tempKey != lastTempKey {
+                lastTempKey = tempKey
+                let tempColor = _cpuTemperature > 0 ? colorForTemperature(_cpuTemperature, isDark: isDark) : textColor
+                
+                // Value line (Top, bigger font)
+                let s1 = NSMutableAttributedString()
+                s1.append(NSAttributedString(string: tempVal, attributes: [
+                    .font: tempValFont, .foregroundColor: tempColor, .paragraphStyle: rightAlignStyle
+                ]))
+                cachedTempLine = s1
+                
+                // Unit line (Bottom, standard font, dimmed)
+                let s2 = NSMutableAttributedString()
+                s2.append(NSAttributedString(string: _cpuTemperature > 0 ? "°" + _tempUnit : "", attributes: [
+                    .font: cpuMemUnitFont, .foregroundColor: tempColor.withAlphaComponent(dimAlpha), .paragraphStyle: rightAlignStyle
+                ]))
+                cachedTempUnitLine = s2
+            }
+            cachedTempLine!.draw(in: CGRect(x: currentX, y: line1Y, width: tempW, height: lineH))
+            cachedTempUnitLine!.draw(in: CGRect(x: currentX, y: line2Y, width: tempW, height: lineH))
         }
-        cachedTempLine!.draw(in: CGRect(x: netW + cpuMemW, y: line1Y, width: tempW, height: lineH))
-        cachedTempUnitLine!.draw(in: CGRect(x: netW + cpuMemW, y: line2Y, width: tempW, height: lineH))
     }
 }

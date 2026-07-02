@@ -36,11 +36,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         let statusBar = NSStatusBar.system
         
-        let itemWidth: CGFloat = 102.0
-        statusItem = statusBar.statusItem(withLength: itemWidth)
-        statsView = UnifiedStatsView(frame: NSRect(x: 0, y: 0, width: itemWidth, height: 22))
+        let initialWidth = UnifiedStatsView.calculateWidth(showNetwork: showNetworkSpeeds, showTemperature: showCPUTemperature)
+        statusItem = statusBar.statusItem(withLength: initialWidth)
+        statsView = UnifiedStatsView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: 22))
         statsView.onClick = { [weak self] in self?.showMenu() }
         statsView.onRightClick = { [weak self] in self?.showMenu() }
+        
+        statsView.showNetwork = showNetworkSpeeds
+        statsView.showTemperature = showCPUTemperature
+        updateStatusItemWidth()
         
         if let button = statusItem.button {
             button.addSubview(statsView)
@@ -88,6 +92,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         // --- Settings Section ---
+        let showNetItem = NSMenuItem(title: "Show Network Speeds", action: #selector(toggleShowNetwork(_:)), keyEquivalent: "")
+        showNetItem.target = self
+        showNetItem.state = showNetworkSpeeds ? .on : .off
+        menu.addItem(showNetItem)
+        
+        let showTempItem = NSMenuItem(title: "Show CPU Temperature", action: #selector(toggleShowTemperature(_:)), keyEquivalent: "")
+        showTempItem.target = self
+        showTempItem.state = showCPUTemperature ? .on : .off
+        menu.addItem(showTempItem)
+        
         let autoStartItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
         autoStartItem.target = self
         autoStartItem.state = isLaunchAtLoginEnabled ? .on : .off
@@ -268,6 +282,37 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(newValue, forKey: "tempUnit")
             updateStats()
         }
+    }
+    
+    private var showNetworkSpeeds: Bool {
+        get { UserDefaults.standard.object(forKey: "showNetworkSpeeds") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "showNetworkSpeeds"); updateUIForSettingsChange() }
+    }
+    
+    private var showCPUTemperature: Bool {
+        get { UserDefaults.standard.object(forKey: "showCPUTemperature") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "showCPUTemperature"); updateUIForSettingsChange() }
+    }
+    
+    @objc private func toggleShowNetwork(_ sender: NSMenuItem) {
+        showNetworkSpeeds.toggle()
+    }
+    
+    @objc private func toggleShowTemperature(_ sender: NSMenuItem) {
+        showCPUTemperature.toggle()
+    }
+    
+    private func updateUIForSettingsChange() {
+        statsView.showNetwork = showNetworkSpeeds
+        statsView.showTemperature = showCPUTemperature
+        updateStatusItemWidth()
+        statsView.needsDisplay = true
+    }
+
+    private func updateStatusItemWidth() {
+        let width = UnifiedStatsView.calculateWidth(showNetwork: showNetworkSpeeds, showTemperature: showCPUTemperature)
+        statusItem.length = width
+        statsView.frame.size.width = width
     }
     
     @objc private func changeTempUnit(_ sender: NSMenuItem) {

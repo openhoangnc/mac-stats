@@ -38,6 +38,8 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **中列 (CPU/内存)**：显示 CPU 使用率（上）和 内存占用量 G（下）。当负载升高时颜色会自动从绿变红。
   - **右列 (温度)**：显示 CPU 平均温度（上）和 温度单位（下）。颜色同样会根据温度高低自动变化。
 - ⚙️ **快捷设置菜单**：左键或右键点击菜单栏图标即可唤出：
+  - **Show Network Speeds (显示网速)**：切换是否显示网速列。
+  - **Show CPU Temperature (显示CPU温度)**：切换是否显示CPU温度列。
   - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。
   - **Update Interval (刷新频率)**：支持自定义刷新时间（1秒、2秒 或 5秒）。
   - **Temperature Unit (温度单位)**：切换摄氏度 (`°C`) 和华氏度 (`°F`)。
