@@ -8,6 +8,8 @@
 ![Swift](https://img.shields.io/badge/Swift-5.0-orange?logo=swift)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+![MacStats Screenshot](screenshot.png)
+
 ---
 
 ## ⚡ Bắt đầu nhanh
