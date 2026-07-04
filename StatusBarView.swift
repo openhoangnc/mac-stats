@@ -87,7 +87,7 @@ public class UnifiedStatsView: BaseStatsView {
 
     public static func calculateWidth(showNetwork: Bool, showTemperature: Bool) -> CGFloat {
         let netW: CGFloat = showNetwork ? 34.0 : 0.0
-        let cpuMemW: CGFloat = showNetwork ? 34.0 : 32.0
+        let cpuMemW: CGFloat = showNetwork ? 40.0 : 38.0
         let tempW: CGFloat = showTemperature ? 21.0 : 0.0
         return netW + cpuMemW + tempW
     }
@@ -183,7 +183,7 @@ public class UnifiedStatsView: BaseStatsView {
         let lineH: CGFloat = 11.0
         
         let netW: CGFloat = showNetwork ? 34.0 : 0.0
-        let cpuMemW: CGFloat = showNetwork ? 34.0 : 32.0
+        let cpuMemW: CGFloat = showNetwork ? 40.0 : 38.0
         let tempW: CGFloat = showTemperature ? 21.0 : 0.0
 
         var currentX: CGFloat = 0.0
