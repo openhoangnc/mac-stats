@@ -39,7 +39,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Cột Trái (Mạng)**: Tốc độ Upload (dòng trên) và Download (dòng dưới). Đơn vị tự động thay đổi (`B`, `K`, `M`, `G`) và màu sắc cảnh báo theo băng thông.
   - **Cột Giữa (CPU & RAM)**: % CPU (dòng trên) và mức RAM đang dùng tính bằng GB (dòng dưới). Màu sắc tự động đổi (xanh/vàng/đỏ) khi hệ thống tải nặng.
   - **Cột Phải (Nhiệt độ)**: Nhiệt độ trung bình của CPU (dòng trên) và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
+- 🔝 **Xem ngay ứng dụng "ngốn" tài nguyên**: Mỗi khi mở menu, app hiển thị ngay top các ứng dụng đang chiếm nhiều **CPU** và **RAM** nhất theo thời gian thực. Các tiến trình phụ (ví dụ hàng loạt renderer của trình duyệt) được gộp chung về ứng dụng cha, còn các tiến trình hệ thống chạy ngầm sẽ bị lọc bỏ — nên bạn chỉ thấy đúng những ứng dụng thực sự đáng quan tâm.
 - ⚙️ **Menu Cài đặt nhanh**: Click chuột trái/phải vào icon trên thanh Menu để mở:
+  - **Open Activity Monitor**: Mở nhanh Activity Monitor của macOS để xem chi tiết đầy đủ.
   - **Show Network Speeds**: Bật/tắt hiển thị cột tốc độ mạng.
   - **Show CPU Temperature**: Bật/tắt hiển thị cột nhiệt độ CPU.
   - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).

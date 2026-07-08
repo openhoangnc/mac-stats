@@ -39,7 +39,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **左列 (网络)**：实时显示 上传（上）和 下载（下）网速。单位自动缩放（`B`, `K`, `M`, `G`），并会根据当前网速动态变色。
   - **中列 (CPU/内存)**：显示 CPU 使用率（上）和 内存占用量 G（下）。当负载升高时颜色会自动从绿变红。
   - **右列 (温度)**：显示 CPU 平均温度（上）和 温度单位（下）。颜色同样会根据温度高低自动变化。
+- 🔝 **一眼看清资源占用大户**：每次打开菜单，都会实时列出占用 **CPU** 和 **内存** 最多的应用。辅助进程（例如浏览器的众多渲染进程）会自动归并到其父应用下，后台系统守护进程则被过滤掉——让你只看到真正需要关注的应用。
 - ⚙️ **快捷设置菜单**：左键或右键点击菜单栏图标即可唤出：
+  - **Open Activity Monitor (打开活动监视器)**：一键跳转到 macOS 活动监视器，查看完整详细的资源占用情况。
   - **Show Network Speeds (显示网速)**：切换是否显示网速列。
   - **Show CPU Temperature (显示CPU温度)**：切换是否显示CPU温度列。
   - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。

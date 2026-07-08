@@ -40,6 +40,12 @@ public struct NetworkStats {
     public var activeInterface: String = "en0"
 }
 
+public struct ProcessUsage {
+    public let name: String
+    public var cpuPercent: Double
+    public var memoryBytes: UInt64
+}
+
 public class StatsEngine {
     // Cached immutable system values (queried once)
     private let hostPort: mach_port_t = mach_host_self()
@@ -286,7 +292,90 @@ public class StatsEngine {
         self.prevNetBytesSent = currentBytesSent
         self.prevNetBytesRecv = currentBytesRecv
         self.prevNetTime = now
-        
+
         return stats
+    }
+
+    // MARK: - Per-Process Sampling
+    /// Returns per-application resource usage, ranked by CPU and by memory.
+    /// Only the current user's processes are included, which naturally
+    /// excludes root/system daemons (kernel_task, WindowServer, mds, …).
+    /// Helper processes are rolled up into their parent `.app` bundle so a
+    /// browser's many renderers appear as a single application.
+    ///
+    /// `ps` reports an instantaneous %CPU (the kernel's decaying average), so
+    /// no second sample is needed. This is only called on menu open, so the
+    /// one-off subprocess cost never touches the periodic update path.
+    public func fetchTopProcesses(limit: Int) -> (byCPU: [ProcessUsage], byMemory: [ProcessUsage]) {
+        let currentUID = getuid()
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/ps")
+        // -a: all users  -x: include processes with no controlling tty (GUI apps).
+        // `comm` (full executable path) must be last since it can contain spaces.
+        task.arguments = ["-axo", "pcpu=,rss=,uid=,comm="]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+
+        guard (try? task.run()) != nil else { return ([], []) }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
+        guard let output = String(data: data, encoding: .utf8) else { return ([], []) }
+
+        // Exclude our own app from the ranking.
+        let selfName = Bundle.main.infoDictionary?["CFBundleName"] as? String
+
+        var byName: [String: ProcessUsage] = [:]
+        for line in output.split(separator: "\n") {
+            guard let (cpu, rssKB, uid, comm) = Self.parseProcessLine(line) else { continue }
+            guard uid == currentUID else { continue }
+            let name = Self.appName(fromPath: comm)
+            guard !name.isEmpty, name != selfName else { continue }
+
+            if byName[name] != nil {
+                byName[name]!.cpuPercent += cpu
+                byName[name]!.memoryBytes += rssKB * 1024
+            } else {
+                byName[name] = ProcessUsage(name: name, cpuPercent: cpu, memoryBytes: rssKB * 1024)
+            }
+        }
+
+        let all = Array(byName.values)
+        let byCPU = all.sorted { $0.cpuPercent > $1.cpuPercent }.prefix(limit)
+        let byMemory = all.sorted { $0.memoryBytes > $1.memoryBytes }.prefix(limit)
+        return (Array(byCPU), Array(byMemory))
+    }
+
+    /// Parses one `ps` line: three leading numeric columns (pcpu, rss, uid)
+    /// followed by the command path, which may itself contain spaces.
+    private static func parseProcessLine(_ line: Substring) -> (cpu: Double, rssKB: UInt64, uid: uid_t, comm: String)? {
+        var idx = line.startIndex
+        func skipSpaces() { while idx < line.endIndex, line[idx] == " " { idx = line.index(after: idx) } }
+        func nextToken() -> Substring? {
+            skipSpaces()
+            guard idx < line.endIndex else { return nil }
+            let start = idx
+            while idx < line.endIndex, line[idx] != " " { idx = line.index(after: idx) }
+            return line[start..<idx]
+        }
+
+        guard let t1 = nextToken(), let cpu = Double(t1),
+              let t2 = nextToken(), let rss = UInt64(t2),
+              let t3 = nextToken(), let uid = UInt32(t3) else { return nil }
+        skipSpaces()
+        guard idx < line.endIndex else { return nil }
+        return (cpu, rss, uid_t(uid), String(line[idx...]))
+    }
+
+    /// Derives a friendly application name from an executable path. Prefers the
+    /// top-level `.app` bundle name (so helpers roll up into their parent app);
+    /// otherwise falls back to the executable's file name.
+    private static func appName(fromPath path: String) -> String {
+        let components = path.split(separator: "/", omittingEmptySubsequences: true)
+        for comp in components where comp.hasSuffix(".app") {
+            return String(comp.dropLast(4))
+        }
+        return components.last.map(String.init) ?? ""
     }
 }

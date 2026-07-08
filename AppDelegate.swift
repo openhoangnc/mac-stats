@@ -90,7 +90,42 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func showMenu() {
         let menu = NSMenu()
-        
+        // Manage item enabled-state ourselves so info rows stay legible (not greyed).
+        menu.autoenablesItems = false
+
+        // --- Top Processes Section ---
+        // Fetched fresh on open; excludes system daemons and rolls helpers into their app.
+        // Rows start as plain items so the menu can compute its natural width; below
+        // we swap in width-filling views that right-align the value flush to that width.
+        var usageRows: [(item: NSMenuItem, name: String, value: String)] = []
+        let top = statsEngine.fetchTopProcesses(limit: 3)
+        if !top.byCPU.isEmpty {
+            menu.addItem(Self.sectionHeader("Top CPU"))
+            for p in top.byCPU {
+                let value = Self.formatCPU(p.cpuPercent)
+                let item = Self.provisionalUsageItem(name: p.name, value: value)
+                menu.addItem(item)
+                usageRows.append((item, p.name, value))
+            }
+            menu.addItem(NSMenuItem.separator())
+        }
+        if !top.byMemory.isEmpty {
+            menu.addItem(Self.sectionHeader("Top Memory"))
+            for p in top.byMemory {
+                let value = Self.formatMemory(p.memoryBytes)
+                let item = Self.provisionalUsageItem(name: p.name, value: value)
+                menu.addItem(item)
+                usageRows.append((item, p.name, value))
+            }
+            menu.addItem(NSMenuItem.separator())
+        }
+
+        // Jump to Activity Monitor for the full, detailed breakdown.
+        let activityItem = NSMenuItem(title: "Open Activity Monitor", action: #selector(openActivityMonitor), keyEquivalent: "")
+        activityItem.target = self
+        menu.addItem(activityItem)
+        menu.addItem(NSMenuItem.separator())
+
         // --- Settings Section ---
         let showNetItem = NSMenuItem(title: "Show Network Speeds", action: #selector(toggleShowNetwork(_:)), keyEquivalent: "")
         showNetItem.target = self
@@ -149,6 +184,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         menu.addItem(quitItem)
         
+        // Now that every item is present, the menu's width is final. Replace each
+        // provisional process row with a view that fills that width and pins its
+        // value to the right edge — so the value column aligns with no trailing gap.
+        if !usageRows.isEmpty {
+            let width = menu.size.width
+            for row in usageRows {
+                row.item.title = ""
+                row.item.view = Self.usageRowView(name: row.name, value: row.value, width: width)
+            }
+        }
+
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
@@ -327,7 +373,79 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @objc private func openActivityMonitor() {
+        let workspace = NSWorkspace.shared
+        if let url = workspace.urlForApplication(withBundleIdentifier: "com.apple.ActivityMonitor") {
+            workspace.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        } else {
+            // Fallback to the canonical location on macOS 11+.
+            workspace.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
+        }
+    }
+
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    // MARK: - Top Processes menu rendering
+
+    private static func sectionHeader(_ title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.attributedTitle = NSAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ])
+        return item
+    }
+
+    /// A placeholder row used only so the menu can size itself to fit the widest
+    /// "name  value" pair before we swap in the final width-filling view.
+    private static func provisionalUsageItem(name: String, value: String) -> NSMenuItem {
+        let display = name.count > 28 ? String(name.prefix(27)) + "…" : name
+        let item = NSMenuItem(title: "\(display)    \(value)", action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        return item
+    }
+
+    /// A non-interactive row that fills the menu's full `width`: app name on the
+    /// left (truncated to fit), value flush to the right edge. Filling the width
+    /// is what removes the trailing empty space a fixed tab stop would leave.
+    private static func usageRowView(name: String, value: String, width: CGFloat) -> NSView {
+        let leftInset: CGFloat = 21
+        let rightInset: CGFloat = 21
+        let font = NSFont.menuFont(ofSize: 0)
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 20))
+
+        let valueWidth = NSAttributedString(string: value, attributes: [.font: font]).size().width
+        let valueLabel = NSTextField(labelWithString: value)
+        valueLabel.font = font
+        valueLabel.textColor = .secondaryLabelColor
+        valueLabel.alignment = .right
+        valueLabel.frame = NSRect(x: width - rightInset - valueWidth, y: 2, width: valueWidth + 1, height: 16)
+        valueLabel.autoresizingMask = [.minXMargin]
+        container.addSubview(valueLabel)
+
+        let nameLabel = NSTextField(labelWithString: name)
+        nameLabel.font = font
+        nameLabel.textColor = .labelColor
+        nameLabel.lineBreakMode = .byTruncatingTail
+        nameLabel.maximumNumberOfLines = 1
+        nameLabel.frame = NSRect(x: leftInset, y: 2,
+                                 width: max(0, valueLabel.frame.minX - 8 - leftInset), height: 16)
+        nameLabel.autoresizingMask = [.width]
+        container.addSubview(nameLabel)
+
+        return container
+    }
+
+    private static func formatCPU(_ percent: Double) -> String {
+        return String(format: "%.0f%%", percent)
+    }
+
+    private static func formatMemory(_ bytes: UInt64) -> String {
+        let gb = Double(bytes) / 1_073_741_824.0
+        if gb >= 1.0 { return String(format: "%.1f GB", gb) }
+        return String(format: "%.0f MB", Double(bytes) / 1_048_576.0)
     }
 }

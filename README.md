@@ -39,7 +39,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Left (Network)**: Real-time Upload (top) and Download (bottom) speeds. Units scale automatically (`B`, `K`, `M`, `G`), and colors adapt dynamically to bandwidth usage.
   - **Center (CPU/Memory)**: Live CPU load (`%`, top) and RAM usage (`G`, bottom). Smart color thresholds (Green → Yellow → Red) instantly warn you under heavy load.
   - **Right (Temperature)**: Average CPU temperature (top) and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
+- 🔝 **Top Resource Hogs at a Glance**: Opening the menu instantly reveals the apps consuming the most **CPU** and **memory**, ranked in real time. Helper processes (like a browser's many renderers) are rolled up into their parent app, and background system daemons are filtered out—so you only see the apps that actually matter.
 - ⚙️ **Quick Settings Menu**: Left or right-click the menu bar icon to access:
+  - **Open Activity Monitor**: Jump straight to macOS Activity Monitor for the full, detailed breakdown.
   - **Show Network Speeds**: Toggle the visibility of the network speeds column.
   - **Show CPU Temperature**: Toggle the visibility of the CPU temperature column.
   - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
