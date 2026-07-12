@@ -70,15 +70,18 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
    cd mac-stats
    ```
 
-2. ビルドスクリプトの実行：
+2. **ビルドとインストールを一度に（推奨）。** ローカルのチェックアウトから実行すると、`install.sh` はソースを検出し、リリースをダウンロードする代わりにソースからビルドします—`build.sh` でユニバーサルバイナリ（Apple Silicon + Intel）をコンパイルし、`/Applications` にインストールして起動します：
    ```bash
-   ./build.sh
+   ./install.sh
    ```
 
-3. アプリケーションの起動：
+   または、インストールせずに `.app` バンドルをその場でビルドするだけの場合：
    ```bash
+   ./build.sh
    open MacStats.app
    ```
+
+> **注:** クイックスタートの1コマンドは最新のビルド済みリリースをダウンロードしますが、クローンしたリポジトリから実行する `./install.sh` は常にローカルのソースをビルドしてインストールします。
 
 ---
 

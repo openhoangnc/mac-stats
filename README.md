@@ -70,15 +70,21 @@ If you prefer to compile it yourself from source:
    cd mac-stats
    ```
 
-2. Run the build script:
+2. **Build & install in one step (recommended).** When run from a local
+   checkout, `install.sh` detects the source and builds from it instead of
+   downloading a release—compiling a universal (Apple Silicon + Intel) binary
+   via `build.sh`, installing it to `/Applications`, and launching it:
    ```bash
-   ./build.sh
+   ./install.sh
    ```
 
-3. Launch the application:
+   Or just build the `.app` bundle in place without installing:
    ```bash
+   ./build.sh
    open MacStats.app
    ```
+
+> **Note:** The one-line command in [Quick Start](#-one-line-download--install) downloads the latest prebuilt release, whereas `./install.sh` run from a cloned repo always builds and installs your local source.
 
 ---
 

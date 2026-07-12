@@ -60,28 +60,38 @@ echo "=== Installing ${APP_NAME} ==="
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-LATEST_ZIP_URL="https://github.com/${REPO}/releases/latest/download/MacStats.zip"
-DOWNLOADED=0
-
-echo "[1/3] Downloading latest release of ${APP_NAME}..."
-if curl -fsSL -o "${TMP_DIR}/MacStats.zip" "${LATEST_ZIP_URL}" 2>/dev/null; then
-    echo "--> Downloaded MacStats.zip from GitHub Release."
-    DOWNLOADED=1
-else
-    echo "--> Release zip not available via GitHub Release download yet."
-    if [ -f "./build.sh" ]; then
-        echo "--> Compiling ${APP_NAME} locally from source..."
-        ./build.sh
-        if [ -d "${APP_NAME}.app" ]; then
-            zip -r -q "${TMP_DIR}/MacStats.zip" "${APP_NAME}.app"
-            DOWNLOADED=1
-        fi
-    fi
+# Resolve the directory this script lives in. It is empty when the script is
+# piped from `curl ... | bash` (no file on disk), which is how we distinguish a
+# local checkout from a remote one-liner install.
+SOURCE_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fi
 
-if [ $DOWNLOADED -eq 0 ]; then
-    echo "Error: Could not obtain ${APP_NAME}.app binary. Please ensure GitHub releases exist or build.sh is present."
-    exit 1
+APP_SRC=""   # path to the .app bundle we will install
+
+if [ -n "${SOURCE_DIR}" ] && [ -f "${SOURCE_DIR}/build.sh" ]; then
+    # Local checkout: build from source so local changes are the ones installed.
+    echo "[1/3] Local source detected — building ${APP_NAME} from source..."
+    ( cd "${SOURCE_DIR}" && ./build.sh )
+    APP_SRC="${SOURCE_DIR}/${APP_NAME}.app"
+    if [ ! -d "${APP_SRC}" ]; then
+        echo "Error: build failed — ${APP_NAME}.app was not produced."
+        exit 1
+    fi
+else
+    # Remote install: download the latest prebuilt release.
+    echo "[1/3] Downloading latest release of ${APP_NAME}..."
+    LATEST_ZIP_URL="https://github.com/${REPO}/releases/latest/download/MacStats.zip"
+    if curl -fsSL -o "${TMP_DIR}/MacStats.zip" "${LATEST_ZIP_URL}"; then
+        echo "--> Downloaded MacStats.zip from GitHub Release."
+        unzip -q "${TMP_DIR}/MacStats.zip" -d "${TMP_DIR}"
+        APP_SRC="${TMP_DIR}/${APP_NAME}.app"
+    fi
+    if [ ! -d "${APP_SRC}" ]; then
+        echo "Error: Could not download ${APP_NAME}. Ensure a GitHub release exists, or run this script from a local checkout to build from source."
+        exit 1
+    fi
 fi
 
 echo "[2/3] Installing to ${APP_PATH}..."
@@ -93,11 +103,7 @@ if pgrep -x "${APP_NAME}" > /dev/null; then
 fi
 
 rm -rf "${APP_PATH}"
-if [ -f "${TMP_DIR}/MacStats.zip" ]; then
-    unzip -q "${TMP_DIR}/MacStats.zip" -d "${INSTALL_DIR}"
-elif [ -d "${APP_NAME}.app" ]; then
-    cp -R "${APP_NAME}.app" "${INSTALL_DIR}/"
-fi
+cp -R "${APP_SRC}" "${INSTALL_DIR}/"
 
 # Remove quarantine flag so macOS allows running
 xattr -r -d com.apple.quarantine "${APP_PATH}" 2>/dev/null || true

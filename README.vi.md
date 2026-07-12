@@ -70,15 +70,18 @@ Nếu bạn thích tự tay clone và build code:
    cd mac-stats
    ```
 
-2. Chạy script build:
+2. **Build & cài đặt chỉ trong một bước (khuyến nghị).** Khi chạy từ mã nguồn đã clone, `install.sh` sẽ tự phát hiện source và build từ đó thay vì tải bản release—biên dịch binary universal (Apple Silicon + Intel) qua `build.sh`, cài vào `/Applications` rồi khởi chạy:
    ```bash
-   ./build.sh
+   ./install.sh
    ```
 
-3. Mở app lên:
+   Hoặc chỉ build gói `.app` tại chỗ mà không cài đặt:
    ```bash
+   ./build.sh
    open MacStats.app
    ```
+
+> **Lưu ý:** Lệnh một dòng ở phần Cài đặt nhanh sẽ tải bản build sẵn mới nhất, còn `./install.sh` chạy từ repo đã clone luôn build và cài đặt mã nguồn cục bộ của bạn.
 
 ---
 

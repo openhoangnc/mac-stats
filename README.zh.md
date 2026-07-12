@@ -70,15 +70,18 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
    cd mac-stats
    ```
 
-2. 执行构建脚本：
+2. **一步完成构建与安装（推荐）。** 从本地克隆的源码运行时，`install.sh` 会检测到源码并直接从源码构建，而不是下载发布版—通过 `build.sh` 编译通用（Apple Silicon + Intel）二进制文件，安装到 `/Applications` 并启动：
    ```bash
-   ./build.sh
+   ./install.sh
    ```
 
-3. 运行应用：
+   或者只在当前目录构建 `.app` 应用包而不安装：
    ```bash
+   ./build.sh
    open MacStats.app
    ```
+
+> **注意：** 快速开始中的一行命令会下载最新的预构建发布版，而在克隆的仓库中运行 `./install.sh` 则始终构建并安装你本地的源码。
 
 ---
 

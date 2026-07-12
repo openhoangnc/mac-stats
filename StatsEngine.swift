@@ -74,7 +74,14 @@ public class StatsEngine {
     }
     
     private func scanActiveTempKeys() -> [String] {
-        let potentialKeys = [
+        let smc = SMC.shared
+        func isActive(_ key: String) -> Bool {
+            guard let val = smc.getValue(key) else { return false }
+            return val > 15.0 && val < 110.0
+        }
+
+        // Apple Silicon per-core / cluster sensors, averaged together.
+        let appleSiliconKeys = [
             // Base/General M1/M2/M3/M4/M5 CPU keys
             "Tc0a", "Tc0b", "Tc0x", "Tc0z",
             "Tc1a", "Tc1b", "Tc1x", "Tc1z",
@@ -107,14 +114,27 @@ public class StatsEngine {
             "Tp9a", "Tp9b", "Tp9x", "Tp9z"
         ]
         
-        var active: [String] = []
-        let smc = SMC.shared
-        for key in potentialKeys {
-            if let val = smc.getValue(key), val > 15.0 && val < 110.0 {
-                active.append(key)
-            }
+        let appleSiliconActive = appleSiliconKeys.filter(isActive)
+        if !appleSiliconActive.isEmpty { return appleSiliconActive }
+
+        // --- Intel Macs ---
+        // Prefer the per-core die sensors, averaged together (mirrors the
+        // Apple Silicon path above). Both upper- and lower-case suffixes
+        // appear depending on the model; only one set is ever active.
+        let intelCoreKeys = [
+            "TC0C", "TC1C", "TC2C", "TC3C", "TC4C", "TC5C", "TC6C", "TC7C", "TC8C", "TC9C",
+            "TC0c", "TC1c", "TC2c", "TC3c", "TC4c", "TC5c", "TC6c", "TC7c", "TC8c", "TC9c"
+        ]
+        let intelCoreActive = intelCoreKeys.filter(isActive)
+        if !intelCoreActive.isEmpty { return intelCoreActive }
+
+        // Fall back to a single summary sensor, in order of preference:
+        // on-die diode, package, proximity, then heatsink.
+        let intelFallbackKeys = ["TC0D", "TC0E", "TC0F", "TCAD", "TC0P", "TC0H"]
+        if let key = intelFallbackKeys.first(where: isActive) {
+            return [key]
         }
-        return active
+        return []
     }
 
     deinit {

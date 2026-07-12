@@ -106,6 +106,12 @@ extension Float {
     }
 }
 
+// `kIOMainPortDefault` (macOS 12+) was renamed from `kIOMasterPortDefault`.
+// Both are 0, the default I/O Kit port. Use a literal so the code builds
+// against the macOS 11 deployment target without deprecation warnings on
+// newer SDKs.
+private let kIOMainPortDefaultCompat: mach_port_t = 0
+
 public class SMC {
     public static let shared = SMC()
     private var conn: io_connect_t = 0
@@ -116,7 +122,7 @@ public class SMC {
         let device: io_object_t
         
         let matchingDictionary: CFMutableDictionary = IOServiceMatching("AppleSMC")
-        result = IOServiceGetMatchingServices(kIOMainPortDefault, matchingDictionary, &iterator)
+        result = IOServiceGetMatchingServices(kIOMainPortDefaultCompat, matchingDictionary, &iterator)
         if result != kIOReturnSuccess {
             return
         }
